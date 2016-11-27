@@ -1,5 +1,5 @@
 import numpy as np
-
+import numpy.matlib
 class KNearestNeighbor(object):
   """ a kNN classifier with L2 distance """
 
@@ -85,6 +85,7 @@ class KNearestNeighbor(object):
 
     Input / Output: Same as compute_distances_two_loops
     """
+    
     num_test = X.shape[0]
     num_train = self.X_train.shape[0]
     dists = np.zeros((num_test, num_train))
@@ -94,7 +95,10 @@ class KNearestNeighbor(object):
       # Compute the l2 distance between the ith test point and all training #
       # points, and store the result in dists[i, :].                        #
       #######################################################################
-      pass
+      # pass
+      X_test_repeat = np.matlib.repmat(X,num_train,1)
+      print X_test_repeat
+      dists[i] = np.sum(np.absolute(np.absolute(X_test_repeat - self.X_train)))
       #######################################################################
       #                         END OF YOUR CODE                            #
       #######################################################################
