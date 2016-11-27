@@ -96,9 +96,10 @@ class KNearestNeighbor(object):
       # points, and store the result in dists[i, :].                        #
       #######################################################################
       # pass
-      X_test_repeat = np.matlib.repmat(X,num_train,1)
-      print X_test_repeat
-      dists[i] = np.sum(np.absolute(np.absolute(X_test_repeat - self.X_train)))
+      X_test_repeat = np.matlib.repmat(X[i],num_train,1)
+      # print X_test_repeat.shape
+      # print X_test_repeat
+      dists[i,:] = np.sum(np.absolute(X_test_repeat - self.X_train),axis=1)
       #######################################################################
       #                         END OF YOUR CODE                            #
       #######################################################################
