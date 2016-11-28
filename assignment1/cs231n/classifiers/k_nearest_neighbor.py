@@ -1,5 +1,7 @@
 import numpy as np
 import numpy.matlib
+import sys
+from sys import exit ## allows exit 
 class KNearestNeighbor(object):
   """ a kNN classifier with L2 distance """
 
@@ -75,7 +77,7 @@ class KNearestNeighbor(object):
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
-        dists[i, j] = np.sum(np.absolute(self.X_train[j,:] - X[i,:]))
+        dists[i, j] = np.sqrt(np.sum((X[i,:] - self.X_train[j,:])**2.0)) 
     return dists
 
   def compute_distances_one_loop(self, X):
@@ -96,10 +98,11 @@ class KNearestNeighbor(object):
       # points, and store the result in dists[i, :].                        #
       #######################################################################
       # pass
-      X_test_repeat = np.matlib.repmat(X[i],num_train,1)
+      # X_test_repeat = np.matlib.repmat(X[i],num_train,1)
       # print X_test_repeat.shape
       # print X_test_repeat
-      dists[i,:] = np.sum(np.absolute(X_test_repeat - self.X_train),axis=1)
+      # dists[i,:] = np.sum(np.absolute(X_test_repeat - self.X_train),axis=1)
+      dists[i,:] = np.sqrt(np.sum((X[i] -  self.X_train)**2.0,axis=1)) 
       #######################################################################
       #                         END OF YOUR CODE                            #
       #######################################################################
@@ -127,7 +130,27 @@ class KNearestNeighbor(object):
     # HINT: Try to formulate the l2 distance using matrix multiplication    #
     #       and two broadcast sums.                                         #
     #########################################################################
-    pass
+    # pass 200 *3               500*3
+    # [[1,2,3],                [[3,4,5],
+    # [4,3,2]]                [4,3,2]]
+    # reshape colum_te =row_train*clumn_train
+    # row_test =row_test
+    #   [[1,2,3],  [1,2,3]],       [[[3,4,5], [4,3,2]],
+    #     [[4,3,2],[4,3,2]]]       [[3,4,5], [4,3,2]]]
+    # dist_per_row = [[[3],[2],[3]],
+    #                 [4],[3],[2]]]
+   
+    # np.title(X, (num_train,1))
+    # sum_of_train = np.sum(self.X_train,axis=1).reshape(1,num_train) # (1,5000)
+    # sum_of_test = np.sum(X,axis=1).reshape(1,num_test).T # (500,1)
+    from IPython.core.debugger import Tracer
+    Tracer()() #this one triggers the debugger
+    # dists = np.absolute(sum_of_train -sum_of_test)
+    # np.sqrt(np.sum((np.tile(X,(1,num_train)) -  np.tile(self.X_train.reshape(1,num_train),(num_test,1)))**2.0,axis=1))
+    dists = X.dot(self.X_train.T)*2 + (np.sum(X.dot(X.T), axis=1).reshape(500,1)+np.sum(self.X_train.dot(self.X_train.T),axis=0).reshape(1,5000))
+    # test_repeat = np.tile(sum_of_test,(1,num_train))
+    # dists = np.absolute(test_repeat - sum_of_train)
+    # print np.sum(np.absolute(X_test_rep-X_train_rep),axis=1)
     #########################################################################
     #                         END OF YOUR CODE                              #
     #########################################################################
