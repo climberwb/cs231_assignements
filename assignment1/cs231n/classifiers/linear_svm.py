@@ -19,6 +19,8 @@ def svm_loss_naive(W, X, y, reg):
   - loss as single float
   - gradient with respect to weights W; an array of same shape as W
   """
+  
+
   dW = np.zeros(W.shape) # initialize the gradient as zero
 
   # compute the loss and the gradient
@@ -27,21 +29,55 @@ def svm_loss_naive(W, X, y, reg):
   loss = 0.0
   for i in xrange(num_train):
     scores = X[i].dot(W)
+    ## [1 2 3 4 5] * [[ c1 c2 c3 
+                        # 2
+                        # 3
+                        # 4
+                        # 5
+                        #]
+    # scores 1 x 3
+    
     correct_class_score = scores[y[i]]
     for j in xrange(num_classes):
       if j == y[i]:
-        continue
-      margin = scores[j] - correct_class_score + 1 # note delta = 1
-      if margin > 0:
-        loss += margin
-
+        temp_scores = scores
+        # temp_scores[j] = 0
+        margin = temp_scores - correct_class_score + 1
+        margin[j] = 0
+        
+        m_total = sum([1 for m in margin if m>0])
+        # print margin
+        # if margin >0:
+        dW[:,j] -= m_total*X[i,:].T
+        # continue
+      else:
+        margin = scores[j] - correct_class_score + 1 # note delta = 
+        
+        # from IPython.core.debugger import Tracer
+        # Tracer()() #this one triggers the debugger
+      
+        if margin > 0:
+          loss += margin
+          dW[:,j] += X[i,:].T
+      
+    
+        
+        
+       
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
 
   # Add regularization to the loss.
   loss += 0.5 * reg * np.sum(W * W)
-
+  # print (reg*np.sum(W,axis=0 )).reshape(1,10).shape
+  # print dW.shape
+  dW = dW/num_train+(reg*np.sum(W,axis=0 )).reshape(1,10)
+   ##### added gradient code below
+  # http://cs231n.github.io/optimization-1/#vis
+  # h=0.001
+  # dW[i] = (margin+1 - fx) / h
+   ###########
   #############################################################################
   # TODO:                                                                     #
   # Compute the gradient of the loss function and store it dW.                #
