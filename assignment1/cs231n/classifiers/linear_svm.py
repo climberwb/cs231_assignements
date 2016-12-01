@@ -29,13 +29,6 @@ def svm_loss_naive(W, X, y, reg):
   loss = 0.0
   for i in xrange(num_train):
     scores = X[i].dot(W)
-    ## [1 2 3 4 5] * [[ c1 c2 c3 
-                        # 2
-                        # 3
-                        # 4
-                        # 5
-                        #]
-    # scores 1 x 3
     
     correct_class_score = scores[y[i]]
     for j in xrange(num_classes):
@@ -72,7 +65,7 @@ def svm_loss_naive(W, X, y, reg):
   loss += 0.5 * reg * np.sum(W * W)
   # print (reg*np.sum(W,axis=0 )).reshape(1,10).shape
   # print dW.shape
-  dW = dW/num_train+(reg*np.sum(W,axis=0 )).reshape(1,10)
+  dW = (dW/num_train)+(reg*np.sum(W,axis=0 )).reshape(1,W.shape[1])
    ##### added gradient code below
   # http://cs231n.github.io/optimization-1/#vis
   # h=0.001
@@ -105,7 +98,27 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  # pass
+  
+  scores = X.dot(W)
+  
+    
+  yi = np.choose(y, scores.T)
+  difference_of_scores_plus_one = ((scores-yi.reshape(yi.shape[0],1)) +1)
+  margins_plus_1 = np.sum(difference_of_scores_plus_one, axis=1)
+  margins = margins_plus_1 -1
+  print margins[margins>0]
+  margins_greater_than_zero = margins[margins>0]
+  loss = np.sum(margins_greater_than_zero)/y.shape[0]
+  loss+=0.5 * reg * np.sum(W * W)
+  v_1=None
+  v_2=None
+  v_3=None
+  v_4=None
+  # from IPython.core.debugger import Tracer
+  # Tracer()() #this one triggers the debugger
+  
+  ## TODO differneces of scores still has yi. This must be removed.
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
