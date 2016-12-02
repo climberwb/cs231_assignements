@@ -65,7 +65,7 @@ def svm_loss_naive(W, X, y, reg):
   loss += 0.5 * reg * np.sum(W * W)
   # print (reg*np.sum(W,axis=0 )).reshape(1,10).shape
   # print dW.shape
-  dW = (dW/num_train)+(reg*np.sum(W,axis=0 )).reshape(1,W.shape[1])
+  dW = (dW/num_train)+reg*W
    ##### added gradient code below
   # http://cs231n.github.io/optimization-1/#vis
   # h=0.001
@@ -104,11 +104,12 @@ def svm_loss_vectorized(W, X, y, reg):
   
     
   yi = np.choose(y, scores.T)
-  difference_of_scores_plus_one = ((scores-yi.reshape(yi.shape[0],1)) +1)
-  margins_plus_1 = np.sum(difference_of_scores_plus_one, axis=1)
-  margins = margins_plus_1 -1
-  print margins[margins>0]
-  margins_greater_than_zero = margins[margins>0]
+  difference_of_scores_plus_one = (scores-yi[:,None]+1)
+  difference_of_scores_plus_one[np.arange(X.shape[0]), y] = -np.inf
+  # margins_plus_1 = np.sum(difference_of_scores_plus_one, axis=1)
+  # margins = margins_plus_1 -1
+  # print margins[margins>0]
+  margins_greater_than_zero = difference_of_scores_plus_one[difference_of_scores_plus_one>0]
   loss = np.sum(margins_greater_than_zero)/y.shape[0]
   loss+=0.5 * reg * np.sum(W * W)
   v_1=None
