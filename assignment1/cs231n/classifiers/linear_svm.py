@@ -112,9 +112,9 @@ def svm_loss_vectorized(W, X, y, reg):
   margins_greater_than_zero = difference_of_scores_plus_one[difference_of_scores_plus_one>0][:,None]
   loss = np.sum(margins_greater_than_zero)/y.shape[0]
   loss+=0.5 * reg * np.sum(W * W)
-  # from IPython.core.debugger import Tracer
-  # Tracer()() #this one triggers the debugger
+  
   difference_of_scores_plus_one[difference_of_scores_plus_one>0] =1
+  difference_of_scores_plus_one[difference_of_scores_plus_one<=0] = 0 
   score_count = difference_of_scores_plus_one.astype(int)
   score_count[np.arange(X.shape[0]), y] = -1*np.sum(score_count,axis=1)
   dW = ((X.T).dot(score_count)/y.shape[0] + reg*W)
