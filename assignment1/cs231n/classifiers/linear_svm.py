@@ -52,7 +52,7 @@ def svm_loss_naive(W, X, y, reg):
         if margin > 0:
           loss += margin
           dW[:,j] += X[i,:].T
-      
+          # 300*
     
         
         
@@ -79,12 +79,14 @@ def svm_loss_naive(W, X, y, reg):
   # loss is being computed. As a result you may need to modify some of the    #
   # code above to compute the gradient.                                       #
   #############################################################################
+  
 
 
   return loss, dW
 
 
 def svm_loss_vectorized(W, X, y, reg):
+  
   """
   Structured SVM loss function, vectorized implementation.
 
@@ -105,20 +107,30 @@ def svm_loss_vectorized(W, X, y, reg):
     
   yi = np.choose(y, scores.T)
   difference_of_scores_plus_one = (scores-yi[:,None]+1)
-  difference_of_scores_plus_one[np.arange(X.shape[0]), y] = -np.inf
-  # margins_plus_1 = np.sum(difference_of_scores_plus_one, axis=1)
-  # margins = margins_plus_1 -1
-  # print margins[margins>0]
-  margins_greater_than_zero = difference_of_scores_plus_one[difference_of_scores_plus_one>0]
+  difference_of_scores_plus_one[np.arange(X.shape[0]), y] = 0#-np.inf
+
+  margins_greater_than_zero = difference_of_scores_plus_one[difference_of_scores_plus_one>0][:,None]
   loss = np.sum(margins_greater_than_zero)/y.shape[0]
   loss+=0.5 * reg * np.sum(W * W)
-  v_1=None
-  v_2=None
-  v_3=None
-  v_4=None
   # from IPython.core.debugger import Tracer
   # Tracer()() #this one triggers the debugger
+  difference_of_scores_plus_one[difference_of_scores_plus_one>0] =1
+  score_count = difference_of_scores_plus_one.astype(int)
+  score_count[np.arange(X.shape[0]), y] = -1*np.sum(score_count,axis=1)
+  dW = ((X.T).dot(score_count)/y.shape[0] + reg*W)
+  # from IPython.core.debugger import Tracer
+  # Tracer()() #this one triggers the debugger
+  # counts for dW
+  # 1 1 0 1 3
+  # 1 0 1 2 0
+  # 4 1 1 1 1
   
+  # xi=500 x class =10
+  
+  # for x
+  # xi=500 column = 3900
+  
+  # x.T*counts_for_scores = 3900 x 10 = dw
   ## TODO differneces of scores still has yi. This must be removed.
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -134,7 +146,8 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  # dW = -1*(difference_of_scores_plus_one[difference_of_scores_plus_one>0].shape[0])
+  # dW = -1*(margins_greater_than_zero.shape[0])
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
