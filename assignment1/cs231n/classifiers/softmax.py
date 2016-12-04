@@ -38,16 +38,22 @@ def softmax_loss_naive(W, X, y, reg):
   for i,xi in enumerate(X):
     label=y[i]
     f = []
+    f_delta=[]
     for class_i,w in enumerate(W.T):
       f.append(xi.dot(w.T))
-    
+      f_delta.append(np.exp(xi.dot(w.T))*xi)
+    # from IPython.core.debugger import Tracer
+    # Tracer()() #this one triggers the debugger
+    for class_i,w in enumerate(W.T):
+      if class_i == label:
+        dW[:,class_i][:,None] +=  -xi.T[:,None] + (1/sum(np.exp(f))*f_delta[class_i][:,None])
+      else:                            
+        dW[:,class_i][:,None] +=   (1/sum(np.exp(f)))*f_delta[class_i][:,None]
+    # int("d")
+        
     f-=np.max(f)
     label=y[i]
     yi_score = f[label]
-    # from IPython.core.debugger import Tracer
-    # Tracer()() #this one triggers the debugger
-    dW +=  -xi.T[:,None] + (1/sum(np.exp(f))*(np.exp(xi*W.T)*xi[:,None].T)).T
-    # int("d")
     loss += -(np.log(np.exp(yi_score) / np.sum(np.exp(f)))) 
   # for i,f in enumerate(scores):
   #   f-=np.max(f)
