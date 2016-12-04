@@ -29,11 +29,38 @@ def softmax_loss_naive(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  # scores = X.dot(W)
+  # loss= -fyi +log(sum(e^fyj))
+  # loss = -W.dotX +log(e^score1+e^score2+e^score3)
+                    #score1 = w[:,1]*xi+w[:,2]*xi+w[:,2]*xi
+  # loss/dw = -X + 1/e^score1+e^score2+e^score3)*[e^(w[:,1].X)*X  ]
+  
+  for i,xi in enumerate(X):
+    label=y[i]
+    f = []
+    for class_i,w in enumerate(W.T):
+      f.append(xi.dot(w.T))
+    
+    f-=np.max(f)
+    label=y[i]
+    yi_score = f[label]
+    # from IPython.core.debugger import Tracer
+    # Tracer()() #this one triggers the debugger
+    dW +=  -xi.T[:,None] + (1/sum(np.exp(f))*(np.exp(xi*W.T)*xi[:,None].T)).T
+    # int("d")
+    loss += -(np.log(np.exp(yi_score) / np.sum(np.exp(f)))) 
+  # for i,f in enumerate(scores):
+  #   f-=np.max(f)
+  #   label=y[i]
+  #   yi_score = f[label]
+  #   loss += -(np.log(np.exp(yi_score) / np.sum(np.exp(f)))) 
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
-
+  loss /= X.shape[0] 
+  loss += 0.5*reg*np.sum(W*W)
+  dW /=X.shape[0]
+  dW +=reg*W
   return loss, dW
 
 
