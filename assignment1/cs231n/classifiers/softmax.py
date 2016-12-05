@@ -33,7 +33,7 @@ def softmax_loss_naive(W, X, y, reg):
   # loss= -fyi +log(sum(e^fyj))
   # loss = -W.dotX +log(e^score1+e^score2+e^score3)
                     #score1 = w[:,1]*xi+w[:,2]*xi+w[:,2]*xi
-  # loss/dw = -X + 1/e^score1+e^score2+e^score3)*[e^(w[:,1].X)*X  ]
+ 
   
   for i,xi in enumerate(X):
     label=y[i]
@@ -55,11 +55,7 @@ def softmax_loss_naive(W, X, y, reg):
     label=y[i]
     yi_score = f[label]
     loss += -(np.log(np.exp(yi_score) / np.sum(np.exp(f)))) 
-  # for i,f in enumerate(scores):
-  #   f-=np.max(f)
-  #   label=y[i]
-  #   yi_score = f[label]
-  #   loss += -(np.log(np.exp(yi_score) / np.sum(np.exp(f)))) 
+
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
@@ -86,10 +82,35 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  f = X.dot(W)
+  # p = np.exp(f) / np.sum(np.exp(f)) # Bad: Numeric problem, potential blowup
+  # 5000x400 400x10
+  # 5000 x 10
+  # instead: first shift the values of f so that the highest number is 0:
+  f -= np.max(f) # f becomes [-666, -333, 0]
+  yi = f[np.arange(len(f)), y]
+
+  losses = -np.log(np.exp(yi) / np.sum(np.exp(f),axis=1)) # safe to do, gives the correct answer
+  # print losses
+  loss = np.mean(losses) 
+  loss += 0.5*reg*np.sum(W*W)
+ 
+ 
+  score_sum = (1/np.sum(np.exp(X.dot(W)),axis=1))#500*1  
+  # from IPython.core.debugger import Tracer
+  # Tracer()() #this one triggers the debugger
+  df = ((np.exp(X.dot(W))*score_sum[:,None]).T).dot(X).T #(10*3000)          3000*300
+  #                                                       500*3000 500*1
+  #                                     10*500 * (500 *3000 * 1*500)
+  dw_xi = ((np.mgrid[:W.shape[1],:y.shape[0]] ==y)[0].dot(X)).T#(3000*10)
+  # dW = (-dw_xi.T + df)/y.shape[0]
+  dW = (-dw_xi + df)/y.shape[0]
+  dW += reg*W
+  # from IPython.core.debugger import Tracer
+  # Tracer()() #this one triggers the debugger
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
-
+  
   return loss, dW
 
