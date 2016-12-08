@@ -66,9 +66,20 @@ class TwoLayerNet(object):
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
     N, D = X.shape
-
+   
+    
     # Compute the forward pass
-    scores = None
+   
+    # X = np.append([np.ones(X.shape[1])], X, axis=0)
+   
+    # W1[0,:]=b1
+    # W2[0,:]=b2
+    
+    l1 =  np.maximum(0,X.dot(W1) + b1);
+    scores = l1.dot(W2)+b2
+    
+    # from IPython.core.debugger import Tracer
+    # Tracer()() #this one triggers the debugger
     #############################################################################
     # TODO: Perform the forward pass, computing the class scores for the input. #
     # Store the result in the scores variable, which should be an array of      #
