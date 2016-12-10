@@ -95,7 +95,12 @@ class TwoLayerNet(object):
       return scores
 
     # Compute the loss
-    loss = None
+    exp_scores = np.exp(scores)
+    probs = exp_scores/np.sum(exp_scores,axis=1,keepdims=True)
+    correct_logpobs = -np.log(probs[range(N),y])
+    data_loss = np.sum(correct_logpobs)/N
+    reg_loss = 0.5*reg*(np.sum(W2*W2)+np.sum(W1*W1))
+    loss = data_loss+reg_loss
     #############################################################################
     # TODO: Finish the forward pass, and compute the loss. This should include  #
     # both the data loss and L2 regularization for W1 and W2. Store the result  #
