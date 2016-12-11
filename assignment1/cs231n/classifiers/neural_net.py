@@ -77,7 +77,7 @@ class TwoLayerNet(object):
     
     l1 =  np.maximum(0,X.dot(W1) + b1);
     scores = l1.dot(W2)+b2
-    
+
     # from IPython.core.debugger import Tracer
     # Tracer()() #this one triggers the debugger
     #############################################################################
@@ -112,7 +112,7 @@ class TwoLayerNet(object):
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
-
+    
     # Backward pass: compute gradients
     grads = {}
     #############################################################################
@@ -120,11 +120,34 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+    dscores = probs
+    dscores[range(N),y] -= 1
+    dscores/=N
+    # backpropate the gradient to the parameters
+    # first backprop into parameters W2 and b2
+    # l1 =  np.maximum(0,X.dot(W1) + b1);
+    # scores = l1.dot(W2)+b2
+  
+    grads['W2'] = np.dot(l1.T, dscores)
+    grads['W2'] += reg * W2
+    grads['b2'] = np.sum(dscores, axis=0, keepdims=True)
+    # from IPython.core.debugger import Tracer
+    # Tracer()() #this one triggers the debugger
+    # next backprop into hidden layer
+    dhidden = np.dot(dscores, W2.T)
+    # backprop the ReLU non-linearity
+    dhidden[l1 <= 0] = 0
+    # finally into W,b
+     #this one triggers the debugger
+    # backpropate the gradient to the parameters
+    grads['W1'] = np.dot(X.T, dhidden)
+    grads['W1'] += reg * W1
+    # grads['W1'] /=N
+    grads['b1'] = np.sum(dhidden, axis=0, keepdims=True)
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
-
+   
     return loss, grads
 
   def train(self, X, y, X_val, y_val,
