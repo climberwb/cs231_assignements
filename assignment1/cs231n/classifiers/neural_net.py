@@ -65,9 +65,9 @@ class TwoLayerNet(object):
     # Unpack variables from the params dictionary
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
+
     N, D = X.shape
-   
-    
+
     # Compute the forward pass
    
     # X = np.append([np.ones(X.shape[1])], X, axis=0)
@@ -76,6 +76,10 @@ class TwoLayerNet(object):
     # W2[0,:]=b2
     
     l1 =  np.maximum(0,X.dot(W1) + b1);
+    # import math
+    # if math.isnan(l1[1,1]):
+    #   print X[2:2]
+    #   print W1[2,2]
     scores = l1.dot(W2)+b2
 
     # from IPython.core.debugger import Tracer
@@ -95,7 +99,10 @@ class TwoLayerNet(object):
       return scores
 
     # Compute the loss
+    scores -=np.max(scores,axis=1)[:,None]
+    # print scores[:2]
     exp_scores = np.exp(scores)
+    # exp_scores -=  np.max(exp_scores)
     probs = exp_scores/np.sum(exp_scores,axis=1,keepdims=True)
     correct_logpobs = -np.log(probs[range(N),y])
     data_loss = np.sum(correct_logpobs)/N
@@ -152,8 +159,8 @@ class TwoLayerNet(object):
 
   def train(self, X, y, X_val, y_val,
             learning_rate=1e-3, learning_rate_decay=0.95,
-            reg=1e-5, num_iters=100,
-            batch_size=200, verbose=False):
+            reg=1e-5, num_iters=3,
+            batch_size=3, verbose=False):
     """
     Train this neural network using stochastic gradient descent.
 
@@ -182,17 +189,22 @@ class TwoLayerNet(object):
     for it in xrange(num_iters):
       X_batch = None
       y_batch = None
-
+      
       #########################################################################
       # TODO: Create a random minibatch of training data and labels, storing  #
       # them in X_batch and y_batch respectively.                             #
       #########################################################################
-      pass
+      import random
+      sample_indeces = random.sample(range(X.shape[0]-1), batch_size)
+      # train_acc_history.append(train_acc_history)
+      X_batch = X[sample_indeces,:]
+      y_batch = y[sample_indeces]
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
 
       # Compute loss and gradients using the current minibatch
+      # print X_batch.shape, y_batch.shape
       loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
       loss_history.append(loss)
 
@@ -202,14 +214,15 @@ class TwoLayerNet(object):
       # using stochastic gradient descent. You'll need to use the gradients   #
       # stored in the grads dictionary defined above.                         #
       #########################################################################
-      pass
+      self.params['W1']-= learning_rate * grads['W1']
+      self.params['W2']-= learning_rate * grads['W2']
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
 
       if verbose and it % 100 == 0:
         print 'iteration %d / %d: loss %f' % (it, num_iters, loss)
-
+        # print y_batch[:20]
       # Every epoch, check train and val accuracy and decay learning rate.
       if it % iterations_per_epoch == 0:
         # Check accuracy
@@ -242,12 +255,18 @@ class TwoLayerNet(object):
       the elements of X. For all i, y_pred[i] = c means that X[i] is predicted
       to have class c, where 0 <= c < C.
     """
-    y_pred = None
+   
 
     ###########################################################################
     # TODO: Implement this function; it should be VERY simple!                #
     ###########################################################################
-    pass
+    l1 =  np.maximum(0,X.dot(self.params['W1']) + self.params['b1']);
+    scores = l1.dot(self.params['W2'])+self.params['b2']
+    scores -=np.max(scores,axis=1)[:,None]
+    exp_scores = np.exp(scores)
+    # exp_scores -=np.max(exp_scores)
+    probs = exp_scores/np.sum(exp_scores,axis=1,keepdims=True)
+    y_pred = np.argmax(probs, axis=1)
     ###########################################################################
     #                              END OF YOUR CODE                           #
     ###########################################################################
