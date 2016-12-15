@@ -160,7 +160,7 @@ class TwoLayerNet(object):
   def train(self, X, y, X_val, y_val,
             learning_rate=1e-3, learning_rate_decay=0.95,
             reg=1e-5, num_iters=3,
-            batch_size=3, verbose=False):
+            batch_size=4, verbose=False):
     """
     Train this neural network using stochastic gradient descent.
 
@@ -189,14 +189,15 @@ class TwoLayerNet(object):
     for it in xrange(num_iters):
       X_batch = None
       y_batch = None
-      
+      # print it
       #########################################################################
       # TODO: Create a random minibatch of training data and labels, storing  #
       # them in X_batch and y_batch respectively.                             #
       #########################################################################
       import random
       sample_indeces = random.sample(range(X.shape[0]-1), batch_size)
-      # train_acc_history.append(train_acc_history)
+      # from IPython.core.debugger import Tracer
+      # Tracer()() #this one triggers the debugger
       X_batch = X[sample_indeces,:]
       y_batch = y[sample_indeces]
       #########################################################################
