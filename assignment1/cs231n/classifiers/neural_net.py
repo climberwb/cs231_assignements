@@ -158,9 +158,9 @@ class TwoLayerNet(object):
     return loss, grads
 
   def train(self, X, y, X_val, y_val,
-            learning_rate=1e-3, learning_rate_decay=0.95,
-            reg=1e-5, num_iters=3,
-            batch_size=4, verbose=False):
+            learning_rate=1e-2, learning_rate_decay=0.95,
+            reg=0.8, num_iters=2000,
+            batch_size=500, verbose=False):
     """
     Train this neural network using stochastic gradient descent.
 
