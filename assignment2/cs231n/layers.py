@@ -106,9 +106,9 @@ def relu_backward(dout, cache):
   #############################################################################
   # TODO: Implement the ReLU backward pass.                                   #
   #############################################################################
-  truth_matrix = dout > 0
+  truth_matrix = x > 0
   truth_matrix = truth_matrix.astype(int)
-  dx =  np.absolute(truth_matrix * dout)
+  dx =  dout*truth_matrix
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
