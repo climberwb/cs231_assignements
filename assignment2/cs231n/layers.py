@@ -14,7 +14,7 @@ def affine_forward(x, w, b):
   - x: A numpy array containing input data, of shape (N, d_1, ..., d_k)
   - w: A numpy array of weights, of shape (D, M)
   - b: A numpy array of biases, of shape (M,)
-  
+
   Returns a tuple of:
   - out: output, of shape (N, M)
   - cache: (x, w, b)
@@ -24,7 +24,9 @@ def affine_forward(x, w, b):
   # TODO: Implement the affine forward pass. Store the result in out. You     #
   # will need to reshape the input into rows.                                 #
   #############################################################################
-  pass
+  x_new_dimensions = x.reshape(x.shape[0],w.shape[0])
+        # 2 * 120 120*3 
+  out = x_new_dimensions.dot(w) +b
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -46,13 +48,18 @@ def affine_backward(dout, cache):
   - dx: Gradient with respect to x, of shape (N, d1, ..., d_k)
   - dw: Gradient with respect to w, of shape (D, M)
   - db: Gradient with respect to b, of shape (M,)
+
   """
-  x, w, b = cache
-  dx, dw, db = None, None, None
+
+
   #############################################################################
   # TODO: Implement the affine backward pass.                                 #
   #############################################################################
-  pass
+  x, w, b = cache 
+
+  dx = dout.dot(w.T).reshape(x.shape)
+  dw = dout.T.dot(x.reshape(x.shape[0],w.shape[0])).T
+  db = np.sum(dout,axis=0)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -74,7 +81,9 @@ def relu_forward(x):
   #############################################################################
   # TODO: Implement the ReLU forward pass.                                    #
   #############################################################################
-  pass
+  truth_matrix = x > 0
+  truth_matrix = truth_matrix.astype(int)
+  out =  np.absolute((truth_matrix * x))
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -97,7 +106,9 @@ def relu_backward(dout, cache):
   #############################################################################
   # TODO: Implement the ReLU backward pass.                                   #
   #############################################################################
-  pass
+  truth_matrix = dout > 0
+  truth_matrix = truth_matrix.astype(int)
+  dx =  np.absolute(truth_matrix * dout)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
