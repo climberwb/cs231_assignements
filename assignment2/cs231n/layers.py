@@ -24,9 +24,11 @@ def affine_forward(x, w, b):
   # TODO: Implement the affine forward pass. Store the result in out. You     #
   # will need to reshape the input into rows.                                 #
   #############################################################################
-  x_new_dimensions = x.reshape(x.shape[0],w.shape[0])
-        # 2 * 120 120*3 
-  out = x_new_dimensions.dot(w) +b
+  new_x_shape =  np.prod(np.array(x.shape[1:]))
+  x_new_dimensions = x.reshape(x.shape[0],new_x_shape)
+  if x_new_dimensions.shape[1] != w.shape[0]:
+    w = w.T
+  out = x_new_dimensions.dot(w)+b
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -559,6 +561,7 @@ def softmax_loss(x, y):
   probs /= np.sum(probs, axis=1, keepdims=True)
   N = x.shape[0]
   loss = -np.sum(np.log(probs[np.arange(N), y])) / N
+  print loss
   dx = probs.copy()
   dx[np.arange(N), y] -= 1
   dx /= N
