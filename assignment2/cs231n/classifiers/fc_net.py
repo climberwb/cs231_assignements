@@ -186,7 +186,24 @@ class FullyConnectedNet(object):
     # beta2, etc. Scale parameters should be initialized to one and shift      #
     # parameters should be initialized to zero.                                #
     ############################################################################
-    pass
+    for i,hidden_dim in enumerate(hidden_dims):
+      wieght = "W%s"%( i+1 )
+      bias = "b%s"%( i+1 )
+      self.params[bias] = np.zeros(hidden_dim)
+      if i == 0:
+
+        self.params[wieght] = np.random.normal(loc=0.0, 
+                                  scale=weight_scale, 
+                                  size=(input_dim,hidden_dim))
+
+      else:
+        previous_dimension = hidden_dims[i-1]
+        self.params[wieght] = np.random.normal(loc=0.0, 
+                                  scale=weight_scale, 
+                                  size=(previous_dimension,hidden_dim))
+
+
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -244,7 +261,7 @@ class FullyConnectedNet(object):
     # self.bn_params[1] to the forward pass for the second batch normalization #
     # layer, etc.                                                              #
     ############################################################################
-    pass
+     
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
