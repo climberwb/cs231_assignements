@@ -173,7 +173,6 @@ class FullyConnectedNet(object):
     self.num_layers = 1 + len(hidden_dims)
     self.dtype = dtype
     self.params = {}
-
     ############################################################################
     # TODO: Initialize the parameters of the network, storing all values in    #
     # the self.params dictionary. Store weights and biases for the first layer #
@@ -202,7 +201,7 @@ class FullyConnectedNet(object):
                                   scale=weight_scale, 
                                   size=(previous_dimension,hidden_dim))
 
-
+      
 
     ############################################################################
     #                             END OF YOUR CODE                             #
@@ -261,7 +260,23 @@ class FullyConnectedNet(object):
     # self.bn_params[1] to the forward pass for the second batch normalization #
     # layer, etc.                                                              #
     ############################################################################
-     
+    previous_layer=None
+    for layer in range(1,self.num_layers):
+      wieght = "W%s"%( layer )
+      bias = "b%s"%( layer )
+      cache = "Cache%s"%(layer)
+      # layer = "L%s"%(layer)
+      if layer == 1:
+        scores, result_cache = affine_forward(X,self.params[wieght],self.params[bias])
+        previous_layer = scores
+      elif layer<self.num_layers:
+        scores, result_cache = affine_forward(previous_layer,self.params[wieght],self.params[bias])
+        previous_layer = scores
+      else:
+        scores, result_cache = affine_forward(previous_layer,self.params[wieght],self.params[bias])
+    
+      # self.params[layer] = layer
+      self.params[cache] = result_cache
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -284,7 +299,41 @@ class FullyConnectedNet(object):
     # automated tests, make sure that your L2 regularization includes a factor #
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
-    pass
+    loss, dloss = softmax_loss(scores,y) 
+    for layer in range(self.num_layers-1,0,-1):
+      wieght = "W%s"%( layer )
+      bias = "b%s"%( layer )
+      cache = "Cache%s"%(layer)
+      reg_loss = 0.5*self.reg*(np.sum(self.params[wieght]*self.params[wieght]))
+      loss += reg_loss
+    
+    previous_layer = None
+    for layer in range(self.num_layers-1,0,-1):
+      weight = "W%s"%( layer )
+      bias = "b%s"%( layer )
+      cache = "Cache%s"%(layer)
+      if layer  == self.num_layers-1:
+        dL, dW, db = affine_backward(dloss,self.params[cache])
+        previous_layer = dL
+      else:
+        dL, dW, db = affine_backward(previous_layer,self.params[cache])
+        
+      dW+=self.reg*self.params[weight]
+      grads[wieght] = dW
+      grads[bias] = db
+      
+    # dL2, dW2, db2 = affine_backward(dloss,cache2)
+    
+    # dW2+=self.reg*self.params['W2']
+
+    # grads['W2'] = dW2
+    # grads['b2'] = db2
+
+    # dL, dW1, db1 = affine_backward(dL2,cache1)
+
+    # dW1+=self.reg*self.params['W1']
+    # grads['W1'] = dW1
+    # grads['b1'] = db1
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
