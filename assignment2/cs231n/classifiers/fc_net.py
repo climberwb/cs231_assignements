@@ -261,6 +261,7 @@ class FullyConnectedNet(object):
     # layer, etc.                                                              #
     ############################################################################
     previous_layer=None
+    all_cache_layers = []
     for layer in range(1,self.num_layers):
       wieght = "W%s"%( layer )
       bias = "b%s"%( layer )
@@ -269,14 +270,15 @@ class FullyConnectedNet(object):
       if layer == 1:
         scores, result_cache = affine_forward(X,self.params[wieght],self.params[bias])
         previous_layer = scores
+        
       elif layer<self.num_layers:
         scores, result_cache = affine_forward(previous_layer,self.params[wieght],self.params[bias])
         previous_layer = scores
       else:
         scores, result_cache = affine_forward(previous_layer,self.params[wieght],self.params[bias])
-    
+      all_cache_layers.append(result_cache)
       # self.params[layer] = layer
-      self.params[cache] = result_cache
+      
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -303,23 +305,24 @@ class FullyConnectedNet(object):
     for layer in range(self.num_layers-1,0,-1):
       wieght = "W%s"%( layer )
       bias = "b%s"%( layer )
-      cache = "Cache%s"%(layer)
       reg_loss = 0.5*self.reg*(np.sum(self.params[wieght]*self.params[wieght]))
       loss += reg_loss
     
     previous_layer = None
+
     for layer in range(self.num_layers-1,0,-1):
       weight = "W%s"%( layer )
       bias = "b%s"%( layer )
-      cache = "Cache%s"%(layer)
+      cache = all_cache_layers[layer-1]
       if layer  == self.num_layers-1:
-        dL, dW, db = affine_backward(dloss,self.params[cache])
+
+        dL, dW, db = affine_backward(dloss,cache)
         previous_layer = dL
       else:
-        dL, dW, db = affine_backward(previous_layer,self.params[cache])
+        dL, dW, db = affine_backward(previous_layer,cache)
         
       dW+=self.reg*self.params[weight]
-      grads[wieght] = dW
+      grads[weight] = dW
       grads[bias] = db
       
     # dL2, dW2, db2 = affine_backward(dloss,cache2)
