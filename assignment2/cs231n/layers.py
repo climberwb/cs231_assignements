@@ -189,7 +189,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
 
     running_mean = momentum * running_mean + (1 - momentum) * sample_mean
     running_var = momentum * running_var + (1 - momentum) * sample_var
-
+    bn_param['eps'] = eps
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
@@ -215,7 +215,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
   # Store the updated running means back into bn_param
   bn_param['running_mean'] = running_mean
   bn_param['running_var'] = running_var
-  cache = (x, gamma, beta, bn_param)
+  cache = (x, normalize, gamma, beta, bn_param)
   return out, cache
 
 
@@ -241,7 +241,21 @@ def batchnorm_backward(dout, cache):
   # TODO: Implement the backward pass for batch normalization. Store the      #
   # results in the dx, dgamma, and dbeta variables.                           #
   #############################################################################
-  pass
+  x, normalize,gamma, beta, bn_param = cache
+  N = dout.shape[0]
+  dx = np.ones(x.shape[0]*x.shape[1]).reshape(x.shape[0],x.shape[1])
+  dx = np.sum(x,axis=0)/N
+  eps = bn_param['eps']
+  dgamma = np.sum(normalize * dout, axis=0)
+  
+  dbeta = np.sum(np.ones(beta.shape[0]) * dout, axis=0)
+  ## TODO fix dx
+  sqrt = normalize **-1/2
+  sqrt_plus_eps = normalize+eps **-1/2
+  dx = gamma * ((1/normalize +eps)**1/2) * (-1/2)* (1/normalize+eps)**-3/2 *(2*sqrt) * dx *-1*dx - dx/sqrt_plus_eps
+  dx *=dout
+
+  # dx.reshape(1,dx.shape[0]) *= dout
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
