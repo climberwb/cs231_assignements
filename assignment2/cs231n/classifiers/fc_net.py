@@ -11,11 +11,9 @@ class TwoLayerNet(object):
   of D, a hidden dimension of H, and perform classification over C classes.
   
   The architecure should be affine - relu - affine - softmax.
-
   Note that this class does not implement gradient descent; instead, it
   will interact with a separate Solver object that is responsible for running
   optimization.
-
   The learnable parameters of the model are stored in the dictionary
   self.params that maps parameter names to numpy arrays.
   """
@@ -24,7 +22,6 @@ class TwoLayerNet(object):
                weight_scale=1e-3, reg=0.0):
     """
     Initialize a new network.
-
     Inputs:
     - input_dim: An integer giving the size of the input
     - hidden_dim: An integer giving the size of the hidden layer
@@ -61,16 +58,13 @@ class TwoLayerNet(object):
   def loss(self, X, y=None):
     """
     Compute loss and gradient for a minibatch of data.
-
     Inputs:
     - X: Array of input data of shape (N, d_1, ..., d_k)
     - y: Array of labels, of shape (N,). y[i] gives the label for X[i].
-
     Returns:
     If y is None, then run a test-time forward pass of the model and return:
     - scores: Array of shape (N, C) giving classification scores, where
       scores[i, c] is the classification score for X[i] and class c.
-
     If y is not None, then run a training-time forward and backward pass and
     return a tuple of:
     - loss: Scalar value giving the loss
@@ -233,7 +227,6 @@ class FullyConnectedNet(object):
   def loss(self, X, y=None):
     """
     Compute loss and gradient for the fully-connected net.
-
     Input / output: Same as TwoLayerNet above.
     """
     X = X.astype(self.dtype)
@@ -286,7 +279,7 @@ class FullyConnectedNet(object):
     # If test mode return early
     if mode == 'test':
       return scores
-
+    
     loss, grads = 0.0, {}
     ############################################################################
     # TODO: Implement the backward pass for the fully-connected net. Store the #
@@ -340,5 +333,6 @@ class FullyConnectedNet(object):
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
-
     return loss, grads
+
+    
