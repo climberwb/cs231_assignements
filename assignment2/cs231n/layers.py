@@ -200,7 +200,10 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     # and shift the normalized data using gamma and beta. Store the result in   #
     # the out variable.                                                         #
     #############################################################################
-    
+    sample_mean = np.mean(x, axis = 0)
+    sample_mean_diff = x-sample_mean
+    sample_var =  np.sum(sample_mean_diff * sample_mean_diff,axis=0) / N
+    sample_var =  np.sum(sample_mean_diff * sample_mean_diff,axis=0) / N
     normalize = (x - running_mean)/np.sqrt(running_var + eps)
     scale_and_shift = normalize * gamma + beta
 
@@ -215,7 +218,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
   # Store the updated running means back into bn_param
   bn_param['running_mean'] = running_mean
   bn_param['running_var'] = running_var
-  cache = (x, normalize, gamma, beta, bn_param)
+  cache = (x, normalize, sample_var, gamma, beta, bn_param)
   return out, cache
 
 
@@ -241,20 +244,36 @@ def batchnorm_backward(dout, cache):
   # TODO: Implement the backward pass for batch normalization. Store the      #
   # results in the dx, dgamma, and dbeta variables.                           #
   #############################################################################
-  x, normalize,gamma, beta, bn_param = cache
-  N = dout.shape[0]
+  x, normalize, sample_var, gamma, beta, bn_param = cache
+  N = float(dout.shape[0])
+  mean_x = np.mean(x,axis=0)
   dx = np.ones(x.shape[0]*x.shape[1]).reshape(x.shape[0],x.shape[1])
-  dx = np.sum(x,axis=0)/N
+  x_ones = np.ones(x.shape[0]*x.shape[1]).reshape(x.shape[0],x.shape[1])
+  dx = np.mean(x_ones,axis=0)
   eps = bn_param['eps']
   dgamma = np.sum(normalize * dout, axis=0)
   
   dbeta = np.sum(np.ones(beta.shape[0]) * dout, axis=0)
   ## TODO fix dx
-  sqrt = normalize **-1/2
-  sqrt_plus_eps = normalize+eps **-1/2
-  dx = gamma * ((1/normalize +eps)**1/2) * (-1/2)* (1/normalize+eps)**-3/2 *(2*sqrt) * dx *-1*dx - dx/sqrt_plus_eps
-  dx *=dout
+  # dx_mean = x_ones/N
+  # dvar_x = (1/N) * 2 * (x - mean_x) * (1-dx_mean)
+  # dx_hat_x = 1/(sample_var+eps)**1/2 *(1-dx_mean)*(-1/2*(sample_var+eps)**-3/2) *dvar_x
+    
+  # dy_x = gamma * dx_hat_x
+  # dx = dout * dy_x
+  # dl_dx_hat = dout * gamma
+  # dl_dvar = np.sum(dl_dx_hat *(x - mean_x) * -1/2 * ((sample_var+eps)**-3/2),axis=0)
+  # dl_mean = np.sum(dl_dx_hat * -1*((sample_var+eps)**--1/2),axis=0) + (dl_dvar/N) * np.sum(-2*(x-mean_x)),axis=0)
+  # dx = dl_dx_hat * ((sample_var+eps)**-1/2) + dl_dvar * 2*(x-mean_x)/N + dl_mean*1/N
 
+  ##########
+  # Forward pass 
+  h = x
+  mu = mean_x
+  var = sample_var
+  dy = dout
+  dx = (1. / N) * gamma * (var + eps)**(-1. / 2.) * (N * dy - np.sum(dy, axis=0)
+    - (h - mu) * (var + eps)**(-1.0) * np.sum(dy * (h - mu), axis=0))
   # dx.reshape(1,dx.shape[0]) *= dout
   #############################################################################
   #                             END OF YOUR CODE                              #
