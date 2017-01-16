@@ -178,15 +178,45 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     # the momentum variable to update the running mean and running variance,    #
     # storing your result in the running_mean and running_var variables.        #
     #############################################################################
-    sample_mean = np.mean(x, axis = 0)
-    sample_mean_diff = x-sample_mean
-    sample_var =  np.sum(sample_mean_diff * sample_mean_diff,axis=0) / N
 
-    normalize = (x - sample_mean)/np.sqrt(sample_var + eps)
-    scale_and_shift = normalize * gamma + beta
+    #step1: calculate mean
+    mu = 1./N * np.sum(x, axis = 0)
 
-    out = scale_and_shift
+    #step2: subtract mean vector of every trainings example
+    xmu = x - mu
 
+    #step3: following the lower branch - calculation denominator
+    sq = xmu ** 2
+
+    #step4: calculate variance
+    var = 1./N * np.sum(sq, axis = 0)
+
+    #step5: add eps for numerical stability, then sqrt
+    sqrtvar = np.sqrt(var + eps)
+
+    #step6: invert sqrtwar
+    ivar = 1./sqrtvar
+
+    #step7: execute normalization
+    xhat = xmu * ivar
+
+    #step8: Nor the two transformation steps
+    gammax = gamma * xhat
+
+    #step9
+    out = gammax + beta
+
+
+    # sample_mean = np.mean(x, axis = 0)
+    # sample_mean_diff = x-sample_mean
+    # sample_var =  np.sum(sample_mean_diff * sample_mean_diff,axis=0) / N
+
+    # normalize = (x - sample_mean)/np.sqrt(sample_var + eps)
+    # scale_and_shift = normalize * gamma + beta
+
+    # out = scale_and_shift
+    sample_var = var
+    sample_mean = mu
     running_mean = momentum * running_mean + (1 - momentum) * sample_mean
     running_var = momentum * running_var + (1 - momentum) * sample_var
     bn_param['eps'] = eps
@@ -200,14 +230,41 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     # and shift the normalized data using gamma and beta. Store the result in   #
     # the out variable.                                                         #
     #############################################################################
-    sample_mean = np.mean(x, axis = 0)
-    sample_mean_diff = x-sample_mean
-    sample_var =  np.sum(sample_mean_diff * sample_mean_diff,axis=0) / N
-    sample_var =  np.sum(sample_mean_diff * sample_mean_diff,axis=0) / N
-    normalize = (x - running_mean)/np.sqrt(running_var + eps)
-    scale_and_shift = normalize * gamma + beta
+    # sample_mean = np.mean(x, axis = 0)
+    # sample_mean_diff = x-sample_mean
+    # sample_var =  np.sum(sample_mean_diff * sample_mean_diff,axis=0) / N
+    # sample_var =  np.sum(sample_mean_diff * sample_mean_diff,axis=0) / N
+    # normalize = (x - running_mean)/np.sqrt(running_var + eps)
+    # scale_and_shift = normalize * gamma + beta
 
-    out = scale_and_shift
+    # out = scale_and_shift
+
+    #step1: calculate mean
+    mu = 1./N * np.sum(x, axis = 0)
+
+    #step2: subtract mean vector of every trainings example
+    xmu = x - mu
+
+    #step3: following the lower branch - calculation denominator
+    sq = xmu ** 2
+
+    #step4: calculate variance
+    var = 1./N * np.sum(sq, axis = 0)
+
+    #step5: add eps for numerical stability, then sqrt
+    sqrtvar = np.sqrt(var + eps)
+
+    #step6: invert sqrtwar
+    ivar = 1./sqrtvar
+
+    #step7: execute normalization
+    xhat = xmu * ivar
+
+    #step8: Nor the two transformation steps
+    gammax = gamma * xhat
+
+    #step9
+    out = gammax + beta
 
     #############################################################################
     #                             END OF YOUR CODE                              #
@@ -218,7 +275,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
   # Store the updated running means back into bn_param
   bn_param['running_mean'] = running_mean
   bn_param['running_var'] = running_var
-  cache = (x, normalize, sample_var, gamma, beta, bn_param)
+  #store intermediate
+  cache = (xhat,gamma,xmu,mu,ivar,sqrtvar,var,eps,x)
   return out, cache
 
 
@@ -244,37 +302,41 @@ def batchnorm_backward(dout, cache):
   # TODO: Implement the backward pass for batch normalization. Store the      #
   # results in the dx, dgamma, and dbeta variables.                           #
   #############################################################################
-  x, normalize, sample_var, gamma, beta, bn_param = cache
-  N = float(dout.shape[0])
-  mean_x = np.mean(x,axis=0)
-  dx = np.ones(x.shape[0]*x.shape[1]).reshape(x.shape[0],x.shape[1])
-  x_ones = np.ones(x.shape[0]*x.shape[1]).reshape(x.shape[0],x.shape[1])
-  dx = np.mean(x_ones,axis=0)
-  eps = bn_param['eps']
-  dgamma = np.sum(normalize * dout, axis=0)
+  (xhat,gamma,xmu,mu,ivar,sqrtvar,var,eps,x) = cache
+  N, D = dout.shape
+  ones_matrix = np.ones((N,D))
+  dgamma = np.sum(xhat * dout, axis=0)
+  dbeta = np.sum(1 * dout, axis=0)
   
-  dbeta = np.sum(np.ones(beta.shape[0]) * dout, axis=0)
-  ## TODO fix dx
-  # dx_mean = x_ones/N
-  # dvar_x = (1/N) * 2 * (x - mean_x) * (1-dx_mean)
-  # dx_hat_x = 1/(sample_var+eps)**1/2 *(1-dx_mean)*(-1/2*(sample_var+eps)**-3/2) *dvar_x
-    
-  # dy_x = gamma * dx_hat_x
-  # dx = dout * dy_x
-  # dl_dx_hat = dout * gamma
-  # dl_dvar = np.sum(dl_dx_hat *(x - mean_x) * -1/2 * ((sample_var+eps)**-3/2),axis=0)
-  # dl_mean = np.sum(dl_dx_hat * -1*((sample_var+eps)**--1/2),axis=0) + (dl_dvar/N) * np.sum(-2*(x-mean_x)),axis=0)
-  # dx = dl_dx_hat * ((sample_var+eps)**-1/2) + dl_dvar * 2*(x-mean_x)/N + dl_mean*1/N
+  #step 2
+  dy_xhat = dout * gamma 
 
-  ##########
-  # Forward pass 
-  h = x
-  mu = mean_x
-  var = sample_var
-  dy = dout
-  dx = (1. / N) * gamma * (var + eps)**(-1. / 2.) * (N * dy - np.sum(dy, axis=0)
-    - (h - mu) * (var + eps)**(-1.0) * np.sum(dy * (h - mu), axis=0))
-  # dx.reshape(1,dx.shape[0]) *= dout
+  #step 3
+  dxhat_dxmu = ivar * dy_xhat
+  dxhat_ivar = np.sum(xmu * dy_xhat,axis = 0) 
+
+  #step 4
+  divar_sqrtvar = -1. / (sqrtvar **2) * dxhat_ivar
+
+  #step 5
+  dvar = 0.5 * 1. /np.sqrt(var+eps)* divar_sqrtvar
+
+  #step 6
+  dmusqrt = 1./N * ones_matrix * dvar
+
+  #step 7
+  dmusqrt_mu = 2. * xmu * dmusqrt
+
+  #step 8 
+  dmu_dx =  (dmusqrt_mu + dxhat_dxmu)
+  dmu_mean = -1 * np.sum(dmusqrt_mu + dxhat_dxmu, axis=0)
+
+  #step 9 
+  dmean_dx = 1./N * ones_matrix * dmu_mean
+
+  dx = dmean_dx + dmu_dx
+
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
