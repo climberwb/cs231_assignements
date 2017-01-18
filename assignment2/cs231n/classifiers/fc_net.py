@@ -222,8 +222,9 @@ class FullyConnectedNet(object):
     # Cast all parameters to the correct datatype
     for k, v in self.params.iteritems():
       self.params[k] = v.astype(dtype)
-
-
+    
+  ## TODO
+  # CREATE batch helper function
   def loss(self, X, y=None):
     """
     Compute loss and gradient for the fully-connected net.
@@ -259,17 +260,20 @@ class FullyConnectedNet(object):
       wieght = "W%s"%( layer )
       bias = "b%s"%( layer )
       cache = "Cache%s"%(layer)
+      gamma = 'gamma%s'%(layer)
+      beta = 'beta%s'%(layer)
       # layer = "L%s"%(layer)
       if layer == 1:
-        scores, result_cache = affine_forward(X,self.params[wieght],self.params[bias])
+        scores, result_cache = affine_relu_forward(X,self.params[wieght],self.params[bias])
         previous_layer = scores
         
-      elif layer<self.num_layers:
-        scores, result_cache = affine_forward(previous_layer,self.params[wieght],self.params[bias])
+      elif layer<self.num_layers-1:
+        scores, result_cache = affine_relu_forward(previous_layer,self.params[wieght],self.params[bias])
         previous_layer = scores
       else:
         scores, result_cache = affine_forward(previous_layer,self.params[wieght],self.params[bias])
       all_cache_layers.append(result_cache)
+    
       # self.params[layer] = layer
       
     ############################################################################
@@ -308,16 +312,16 @@ class FullyConnectedNet(object):
       bias = "b%s"%( layer )
       cache = all_cache_layers[layer-1]
       if layer  == self.num_layers-1:
-
         dL, dW, db = affine_backward(dloss,cache)
         previous_layer = dL
       else:
-        dL, dW, db = affine_backward(previous_layer,cache)
+        dL, dW, db = affine_relu_backward(previous_layer,cache)
         
       dW+=self.reg*self.params[weight]
       grads[weight] = dW
       grads[bias] = db
       
+    
     # dL2, dW2, db2 = affine_backward(dloss,cache2)
     
     # dW2+=self.reg*self.params['W2']
