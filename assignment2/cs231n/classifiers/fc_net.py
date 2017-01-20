@@ -183,12 +183,16 @@ class FullyConnectedNet(object):
       wieght = "W%s"%( i+1 )
       bias = "b%s"%( i+1 )
       self.params[bias] = np.zeros(hidden_dim)
+      
+      if  i< self.num_layers-2 and self.use_batchnorm:
+          gamma = "gamma%s"%( i+1 )
+          beta = "beta%s"%( i+1 )
+          self.params[gamma] = np.ones(hidden_dim)
+          self.params[beta] = np.zeros(hidden_dim)
       if i == 0:
-
         self.params[wieght] = np.random.normal(loc=0.0, 
                                   scale=weight_scale, 
                                   size=(input_dim,hidden_dim))
-
       else:
         previous_dimension = hidden_dims[i-1]
         self.params[wieght] = np.random.normal(loc=0.0, 
@@ -225,6 +229,21 @@ class FullyConnectedNet(object):
     
   ## TODO
   # CREATE batch helper function
+  def batch_affine_relu_forward(self,x,w,b, gamma, beta,bn_param):
+    a_out, fc_cache = affine_forward(x, w, b)
+    b_out, b_cache = batchnorm_forward(a_out, gamma, beta, bn_param)
+    out, relu_cache = relu_forward(b_out)
+    cache = (fc_cache,b_cache ,relu_cache)
+    return out, cache
+
+  def batch_affine_relu_backward(self,dout,cache):
+    fc_cache, b_cache,relu_cache = cache
+    da = relu_backward(dout, relu_cache)
+    dx, dgamma, dbeta = batchnorm_backward(da,b_cache)
+    dx, dw, db = affine_backward(dx, fc_cache)
+    return dx, dw, db, dgamma, dbeta
+    
+  
   def loss(self, X, y=None):
     """
     Compute loss and gradient for the fully-connected net.
@@ -256,20 +275,29 @@ class FullyConnectedNet(object):
     ############################################################################
     previous_layer=None
     all_cache_layers = []
+
     for layer in range(1,self.num_layers):
       wieght = "W%s"%( layer )
       bias = "b%s"%( layer )
       cache = "Cache%s"%(layer)
       gamma = 'gamma%s'%(layer)
       beta = 'beta%s'%(layer)
+      
       # layer = "L%s"%(layer)
       if layer == 1:
-        scores, result_cache = affine_relu_forward(X,self.params[wieght],self.params[bias])
+        if self.use_batchnorm:
+          scores, result_cache = self.batch_affine_relu_forward(X,self.params[wieght],self.params[bias], self.params[gamma], self.params[beta],self.bn_params[layer])
+        else:
+          scores, result_cache = affine_relu_forward(X,self.params[wieght],self.params[bias])
         previous_layer = scores
-        
       elif layer<self.num_layers-1:
-        scores, result_cache = affine_relu_forward(previous_layer,self.params[wieght],self.params[bias])
-        previous_layer = scores
+        if self.use_batchnorm:
+          ## TODO write batchnorm forward
+          scores, result_cache = self.batch_affine_relu_forward(previous_layer,self.params[wieght],self.params[bias], self.params[gamma], self.params[beta],self.bn_params[layer])
+          pass
+        else:
+          scores, result_cache = affine_relu_forward(previous_layer,self.params[wieght],self.params[bias])
+          previous_layer = scores
       else:
         scores, result_cache = affine_forward(previous_layer,self.params[wieght],self.params[bias])
       all_cache_layers.append(result_cache)
@@ -310,18 +338,25 @@ class FullyConnectedNet(object):
     for layer in range(self.num_layers-1,0,-1):
       weight = "W%s"%( layer )
       bias = "b%s"%( layer )
+      gamma = 'gamma%s'%(layer)
+      beta = 'beta%s'%(layer)
       cache = all_cache_layers[layer-1]
       if layer  == self.num_layers-1:
         dL, dW, db = affine_backward(dloss,cache)
         previous_layer = dL
       else:
-        dL, dW, db = affine_relu_backward(previous_layer,cache)
-        
-      dW+=self.reg*self.params[weight]
+        if self.use_batchnorm:
+          ## TODO write batchnorm forward
+          dL, dW, db, dgamma, dbeta =  self.batch_affine_relu_backward(previous_layer,cache)
+          grads[gamma] = dgamma
+          grads[beta] = dbeta 
+        else:
+          dL, dW, db = affine_relu_backward(previous_layer,cache)
+        dW+=self.reg*self.params[weight]
       grads[weight] = dW
       grads[bias] = db
-      
-    
+
+
     # dL2, dW2, db2 = affine_backward(dloss,cache2)
     
     # dW2+=self.reg*self.params['W2']

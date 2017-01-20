@@ -276,7 +276,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
   bn_param['running_mean'] = running_mean
   bn_param['running_var'] = running_var
   #store intermediate
-  cache = (xhat,gamma,xmu,mu,ivar,sqrtvar,var,eps,x)
+  cache = (xhat,gamma,xmu,mu,ivar,sqrtvar,var,eps,x,bn_param)
   return out, cache
 
 
@@ -302,7 +302,7 @@ def batchnorm_backward(dout, cache):
   # TODO: Implement the backward pass for batch normalization. Store the      #
   # results in the dx, dgamma, and dbeta variables.                           #
   #############################################################################
-  (xhat,gamma,xmu,mu,ivar,sqrtvar,var,eps,x) = cache
+  (xhat,gamma,xmu,mu,ivar,sqrtvar,var,eps,x,bn_param) = cache
   N, D = dout.shape
   ones_matrix = np.ones((N,D))
   dgamma = np.sum(xhat * dout, axis=0)
