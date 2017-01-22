@@ -179,27 +179,41 @@ class FullyConnectedNet(object):
     # beta2, etc. Scale parameters should be initialized to one and shift      #
     # parameters should be initialized to zero.                                #
     ############################################################################
-    for i,hidden_dim in enumerate(hidden_dims):
+    for i in range(0,self.num_layers):
       wieght = "W%s"%( i+1 )
       bias = "b%s"%( i+1 )
-      self.params[bias] = np.zeros(hidden_dim)
       
-      if  i< self.num_layers-2 and self.use_batchnorm:
+      if i < self.num_layers-1:
+        hidden_dim = hidden_dims[i]
+      
+      if i > 0 and i< self.num_layers-1:
+        previous_layer = hidden_dims[i-1]
+      elif i == self.num_layers-1:
+        previous_layer = hidden_dims[i-1]
+        
+      if  (i< self.num_layers-2) & self.use_batchnorm:
           gamma = "gamma%s"%( i+1 )
           beta = "beta%s"%( i+1 )
+          hidden_dim = hidden_dims[i]
           self.params[gamma] = np.ones(hidden_dim)
           self.params[beta] = np.zeros(hidden_dim)
       if i == 0:
+        self.params[bias] = np.zeros(hidden_dim)
         self.params[wieght] = np.random.normal(loc=0.0, 
                                   scale=weight_scale, 
                                   size=(input_dim,hidden_dim))
       else:
-        previous_dimension = hidden_dims[i-1]
-        self.params[wieght] = np.random.normal(loc=0.0, 
+        # last layer
+        if i == self.num_layers-1:
+          self.params[bias] = np.zeros(num_classes)
+          self.params[wieght] = np.random.normal(loc=0.0, 
                                   scale=weight_scale, 
-                                  size=(previous_dimension,hidden_dim))
-
-      
+                                  size=(previous_layer,num_classes))
+        else:
+          self.params[bias] = np.zeros(hidden_dim)
+          self.params[wieght] = np.random.normal(loc=0.0, 
+                                    scale=weight_scale, 
+                                    size=(previous_layer,hidden_dim))
 
     ############################################################################
     #                             END OF YOUR CODE                             #
@@ -276,32 +290,38 @@ class FullyConnectedNet(object):
     previous_layer=None
     all_cache_layers = []
 
-    for layer in range(1,self.num_layers):
+    for layer in range(1,self.num_layers+1):
       wieght = "W%s"%( layer )
       bias = "b%s"%( layer )
       cache = "Cache%s"%(layer)
       gamma = 'gamma%s'%(layer)
       beta = 'beta%s'%(layer)
       
-      # layer = "L%s"%(layer)
+      # my forward pass
       if layer == 1:
         if self.use_batchnorm:
           scores, result_cache = self.batch_affine_relu_forward(X,self.params[wieght],self.params[bias], self.params[gamma], self.params[beta],self.bn_params[layer])
         else:
           scores, result_cache = affine_relu_forward(X,self.params[wieght],self.params[bias])
         previous_layer = scores
-      elif layer<self.num_layers-1:
+      elif layer<self.num_layers:
         if self.use_batchnorm:
           ## TODO write batchnorm forward
           scores, result_cache = self.batch_affine_relu_forward(previous_layer,self.params[wieght],self.params[bias], self.params[gamma], self.params[beta],self.bn_params[layer])
-          pass
+          ### MADE THIS  CHANGE BUT IT WAS WORKING FINE BEFORE
+          previous_layer = scores
         else:
           scores, result_cache = affine_relu_forward(previous_layer,self.params[wieght],self.params[bias])
           previous_layer = scores
       else:
         scores, result_cache = affine_forward(previous_layer,self.params[wieght],self.params[bias])
+        previous_layer = scores
+      if True and self.use_dropout and layer < self.num_layers:
+        scores, cache = dropout_forward(previous_layer,self.dropout_param)
+        previous_layer = scores
+        
+        result_cache = result_cache+cache
       all_cache_layers.append(result_cache)
-    
       # self.params[layer] = layer
       
     ############################################################################
@@ -327,32 +347,45 @@ class FullyConnectedNet(object):
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
     loss, dloss = softmax_loss(scores,y) 
-    for layer in range(self.num_layers-1,0,-1):
+    for layer in range(self.num_layers,0,-1):
       wieght = "W%s"%( layer )
       bias = "b%s"%( layer )
       reg_loss = 0.5*self.reg*(np.sum(self.params[wieght]*self.params[wieght]))
       loss += reg_loss
     
     previous_layer = None
-
-    for layer in range(self.num_layers-1,0,-1):
+    for layer in range(self.num_layers,0,-1):
       weight = "W%s"%( layer )
       bias = "b%s"%( layer )
       gamma = 'gamma%s'%(layer)
       beta = 'beta%s'%(layer)
-      cache = all_cache_layers[layer-1]
-      if layer  == self.num_layers-1:
+      layer_i = layer-1
+      cache = all_cache_layers[layer_i]
+      if layer  == self.num_layers:
         dL, dW, db = affine_backward(dloss,cache)
         previous_layer = dL
       else:
+        if True and self.use_dropout:
+          # print all_cache_layers[0][-2]
+          cache_list = list(cache)
+          mask = cache_list.pop()
+          dropout_param = cache_list.pop()
+          dropout_cache = (dropout_param,mask)
+          
+          cache = tuple(cache_list)
+          dL = dropout_backward(previous_layer,dropout_cache)
+          previous_layer = dL
         if self.use_batchnorm:
           ## TODO write batchnorm forward
           dL, dW, db, dgamma, dbeta =  self.batch_affine_relu_backward(previous_layer,cache)
+          previous_layer = dL
           grads[gamma] = dgamma
           grads[beta] = dbeta 
         else:
           dL, dW, db = affine_relu_backward(previous_layer,cache)
+          previous_layer = dL
         dW+=self.reg*self.params[weight]
+      # previous_layer = dL
       grads[weight] = dW
       grads[bias] = db
 
