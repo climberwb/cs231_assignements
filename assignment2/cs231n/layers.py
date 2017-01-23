@@ -671,15 +671,13 @@ def softmax_loss(x, y):
   - loss: Scalar giving the loss
   - dx: Gradient of the loss with respect to x
   """
-  x -= np.max(x, axis=1, keepdims=True)
-  probs = np.exp(x)
+  probs = np.exp(x - np.max(x, axis=1, keepdims=True))
   probs /= np.sum(probs, axis=1, keepdims=True)
-  # added scaling factor to prevent division by zero error for very low 
-  # probabilities in log
-  probs += 0.0000001
+  # probs += 0.000001
   N = x.shape[0]
-  
-  loss = -np.sum(np.log(probs[np.arange(N), y])) / N
+  ## added scaling factor for very small probabilities
+  eps =1e-12
+  loss = -np.sum(np.log(probs[np.arange(N), y]+eps)) / N
   dx = probs.copy()
   dx[np.arange(N), y] -= 1
   dx /= N
