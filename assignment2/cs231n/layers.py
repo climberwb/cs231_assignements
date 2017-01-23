@@ -1,5 +1,6 @@
-import numpy as np
+from __future__ import division
 
+import numpy as np
 
 def affine_forward(x, w, b):
   """
@@ -670,9 +671,14 @@ def softmax_loss(x, y):
   - loss: Scalar giving the loss
   - dx: Gradient of the loss with respect to x
   """
-  probs = np.exp(x - np.max(x, axis=1, keepdims=True))
+  x -= np.max(x, axis=1, keepdims=True)
+  probs = np.exp(x)
   probs /= np.sum(probs, axis=1, keepdims=True)
+  # added scaling factor to prevent division by zero error for very low 
+  # probabilities in log
+  probs += 0.0000001
   N = x.shape[0]
+  
   loss = -np.sum(np.log(probs[np.arange(N), y])) / N
   dx = probs.copy()
   dx[np.arange(N), y] -= 1
