@@ -191,10 +191,9 @@ class FullyConnectedNet(object):
       elif i == self.num_layers-1:
         previous_layer = hidden_dims[i-1]
         
-      if  (i< self.num_layers-2) & self.use_batchnorm:
+      if  (i< self.num_layers-1) & self.use_batchnorm:
           gamma = "gamma%s"%( i+1 )
           beta = "beta%s"%( i+1 )
-          hidden_dim = hidden_dims[i]
           self.params[gamma] = np.ones(hidden_dim)
           self.params[beta] = np.zeros(hidden_dim)
       if i == 0:
@@ -296,18 +295,19 @@ class FullyConnectedNet(object):
       cache = "Cache%s"%(layer)
       gamma = 'gamma%s'%(layer)
       beta = 'beta%s'%(layer)
-      
+      layer_i = layer-1
       # my forward pass
       if layer == 1:
         if self.use_batchnorm:
-          scores, result_cache = self.batch_affine_relu_forward(X,self.params[wieght],self.params[bias], self.params[gamma], self.params[beta],self.bn_params[layer])
+          
+          scores, result_cache = self.batch_affine_relu_forward(X,self.params[wieght],self.params[bias], self.params[gamma], self.params[beta],self.bn_params[layer_i])
         else:
           scores, result_cache = affine_relu_forward(X,self.params[wieght],self.params[bias])
         previous_layer = scores
       elif layer<self.num_layers:
         if self.use_batchnorm:
           ## TODO write batchnorm forward
-          scores, result_cache = self.batch_affine_relu_forward(previous_layer,self.params[wieght],self.params[bias], self.params[gamma], self.params[beta],self.bn_params[layer])
+          scores, result_cache = self.batch_affine_relu_forward(previous_layer,self.params[wieght],self.params[bias], self.params[gamma], self.params[beta],self.bn_params[layer_i])
           ### MADE THIS  CHANGE BUT IT WAS WORKING FINE BEFORE
           previous_layer = scores
         else:
@@ -384,7 +384,7 @@ class FullyConnectedNet(object):
         else:
           dL, dW, db = affine_relu_backward(previous_layer,cache)
           previous_layer = dL
-        dW+=self.reg*self.params[weight]
+      dW+=self.reg*self.params[weight]
       # previous_layer = dL
       grads[weight] = dW
       grads[bias] = db
