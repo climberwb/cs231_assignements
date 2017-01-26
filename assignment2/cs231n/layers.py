@@ -496,21 +496,23 @@ def conv_forward_naive(x, w, b, conv_param):
   
   H_conv = 1 + (H + 2 * pad - HH) / stride
   W_conv = 1 + (W + 2 * pad - WW) / stride
-  out = np.zeros((N,FW,H_conv,W_conv))
+  out = np.zeros((N,FW,int(H_conv),int(W_conv)))
   for F in np.arange(0,FW):
     w_f = w[F]
     for row_i, row in enumerate(np.arange(0, W,stride)):
       for column_i, column in enumerate(np.arange(0,H,stride)):
-        conv = w_f * x[:,:,row:(row+WW), column:(column+HH)]
-        # print np.sum(np.sum(np.sum(conv,axis=1),axis=1),axis=1).shape
-        out[:,F,column_i,row_i] = np.sum(np.sum(np.sum(conv,axis=1),axis=1),axis=1)   
-  print out
+        conv = w_f * x[:,:, column:(column+HH), row:(row+WW)]
+        out[:,F,column_i,row_i] = (np.sum(np.sum(np.sum(conv,axis=1),axis=1),axis=1)+b[F])
+                                              # 4,2,5,5
+                                              # 4,2,5
+                                              # 4,2
+                                              # 4
       
   
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-  cache = (x, w, b, conv_param)
+  cache =  (x, w, b, conv_param)
   return out, cache
 
 
@@ -531,7 +533,10 @@ def conv_backward_naive(dout, cache):
   #############################################################################
   # TODO: Implement the convolutional backward pass.                          #
   #############################################################################
-  pass
+  (x, w, b, conv_param) = cache
+  N = x.shape[0]
+  FW = w.shape[0]
+  db = b 
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
