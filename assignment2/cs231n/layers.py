@@ -492,7 +492,7 @@ def conv_forward_naive(x, w, b, conv_param):
   
   padding_tuple = ((0,0),(0,0),
                     (pad,pad),(pad,pad))
-  x =  np.pad(x,pad_width=padding_tuple,mode='constant',constant_values=0)
+  x_pad =  np.pad(x,pad_width=padding_tuple,mode='constant',constant_values=0)
   
   H_conv = 1 + (H + 2 * pad - HH) / stride
   W_conv = 1 + (W + 2 * pad - WW) / stride
@@ -501,13 +501,9 @@ def conv_forward_naive(x, w, b, conv_param):
     w_f = w[F]
     for row_i, row in enumerate(np.arange(0, W,stride)):
       for column_i, column in enumerate(np.arange(0,H,stride)):
-        conv = w_f * x[:,:, column:(column+HH), row:(row+WW)]
+        conv = w_f * x_pad[:,:, column:(column+HH), row:(row+WW)]
         out[:,F,column_i,row_i] = (np.sum(np.sum(np.sum(conv,axis=1),axis=1),axis=1)+b[F])
-                                              # 4,2,5,5
-                                              # 4,2,5
-                                              # 4,2
-                                              # 4
-      
+                                          
   
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -534,9 +530,38 @@ def conv_backward_naive(dout, cache):
   # TODO: Implement the convolutional backward pass.                          #
   #############################################################################
   (x, w, b, conv_param) = cache
-  N = x.shape[0]
+
+  db = np.zeros(b.shape)
+  dw = np.zeros(w.shape)
+  for f in np.arange(db.shape[0]):
+    db[f] = np.sum(dout[:,f,:,:])
+  pad = conv_param['pad']
+  pad = conv_param['pad']
   FW = w.shape[0]
-  db = b 
+  N = x.shape[0]
+  H = x.shape[2]
+  W = x.shape[3]
+  HH = w.shape[2]
+  WW = w.shape[3]
+  
+  stride = conv_param['stride']
+  
+  padding_tuple = ((0,0),(0,0),
+                    (pad,pad),(pad,pad))
+  x_pad =  np.pad(x,pad_width=padding_tuple,mode='constant',constant_values=0)
+  
+  H_conv = 1 + (H + 2 * pad - HH) / stride
+  W_conv = 1 + (W + 2 * pad - WW) / stride
+  for F in np.arange(0,FW):
+    for c in np.arange(dw.shape[1]):
+      for row_i, row in enumerate(np.arange(0, W,stride)):
+        for column_i, column in enumerate(np.arange(0,H,stride)):
+          dw[F,c,:,:] += np.sum(x_pad[:,c, column:(column+HH), row:(row+WW)] *dout[:,F,(column_i),(row_i)].reshape(4,1,1),axis=0)
+
+        
+
+      
+      
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
