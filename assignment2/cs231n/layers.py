@@ -493,7 +493,6 @@ def conv_forward_naive(x, w, b, conv_param):
   padding_tuple = ((0,0),(0,0),
                     (pad,pad),(pad,pad))
   x_pad =  np.pad(x,pad_width=padding_tuple,mode='constant',constant_values=0)
-  
   H_conv = 1 + (H + 2 * pad - HH) / stride
   W_conv = 1 + (W + 2 * pad - WW) / stride
   out = np.zeros((N,FW,int(H_conv),int(W_conv)))
@@ -533,6 +532,7 @@ def conv_backward_naive(dout, cache):
 
   db = np.zeros(b.shape)
   dw = np.zeros(w.shape)
+  
   for f in np.arange(db.shape[0]):
     db[f] = np.sum(dout[:,f,:,:])
   pad = conv_param['pad']
@@ -549,19 +549,73 @@ def conv_backward_naive(dout, cache):
   padding_tuple = ((0,0),(0,0),
                     (pad,pad),(pad,pad))
   x_pad =  np.pad(x,pad_width=padding_tuple,mode='constant',constant_values=0)
-  
+  dx = np.zeros(x_pad.shape)
   H_conv = 1 + (H + 2 * pad - HH) / stride
   W_conv = 1 + (W + 2 * pad - WW) / stride
   for F in np.arange(0,FW):
     for c in np.arange(dw.shape[1]):
       for row_i, row in enumerate(np.arange(0, W,stride)):
         for column_i, column in enumerate(np.arange(0,H,stride)):
-          dw[F,c,:,:] += np.sum(x_pad[:,c, column:(column+HH), row:(row+WW)] *dout[:,F,(column_i),(row_i)].reshape(4,1,1),axis=0)
+          dw[F,c,:,:] += np.sum(x_pad[:,c, column:(column+HH), row:(row+WW)]*dout[:,F,(column_i),(row_i)].reshape(N,1,1),axis=0)
+    
 
+  # 1 1 1 1 1 1 1 1 1 1 1 1 1
+  # 1 
+  # N
+                                 
+        # 2 2 2 C
         
-
-      
-      
+          # 3 3 3 3 3 W
+          # 3 3 3 3 3 
+          # 3 3 3 3 3
+          # 3 3 3 3 3
+          # 3 3 3 3 3
+          # L  
+          
+          
+          #Filter 
+          # 4 4 levels
+          
+          # filter_output
+          # 5 5 5 5 5 W_conv
+          # 5 5 5 5 5 
+          # 5 5 5 5 5 
+          # 5 5 5 5 5
+          # L_conv
+        
+          #  5 5 5 W
+          #  5 5 5
+          #  5 5 5
+          #  L
+    # print dx[3,2,6,6]
+  print 'implementation'
+  for F in np.arange(0,FW):
+    for c in np.arange(dw.shape[1]):
+      for row_i, row in enumerate(np.arange(0, W,stride)):
+        for column_i, column in enumerate(np.arange(0,H,stride)):
+            ### TODO
+            ### ADD LOOP TO LOOPER OVER COLUMN _ COLUMN +HH AND ROW ROW +WW FOR ALL DW
+          for column_pad_i, column_pad in enumerate(np.arange(column,column+HH)):
+            for row_pad_i, row_pad in enumerate(np.arange(row,row+WW)):
+              dx[:,c, column_pad, row_pad]+=dw[F,c,column_pad_i,row_pad_i]*dout[:,F,(column_i),(row_i)]
+              # except:
+   
+              # pass
+  dx = dx[:,:,1:6,1:6]
+            
+           
+                # reduce padding http://stackoverflow.com/questions/24806174/is-there-an-opposite-inverse-to-numpy-pad-function
+            
+            # 2 2 2 C
+               #Filter 
+               # 4 4 levels
+                 # filter_output
+                  # 5 5 5 5 5 W_conv
+                  # 5 5 5 5 5 
+                  # 5 5 5 5 5 
+                  # 5 5 5 5 5
+                  # L_conv
+                  
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
