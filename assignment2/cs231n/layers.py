@@ -536,7 +536,6 @@ def conv_backward_naive(dout, cache):
   for f in np.arange(db.shape[0]):
     db[f] = np.sum(dout[:,f,:,:])
   pad = conv_param['pad']
-  pad = conv_param['pad']
   FW = w.shape[0]
   N = x.shape[0]
   H = x.shape[2]
@@ -558,69 +557,18 @@ def conv_backward_naive(dout, cache):
         for column_i, column in enumerate(np.arange(0,H,stride)):
           dw[F,c,:,:] += np.sum(x_pad[:,c, column:(column+HH), row:(row+WW)]*dout[:,F,(column_i),(row_i)].reshape(N,1,1),axis=0)
     
-
-  # 1 1 1 1 1 1 1 1 1 1 1 1 1
-  # 1 
-  # N
-                                 
-        # 2 2 2 C
-        
-          # 3 3 3 3 3 W
-          # 3 3 3 3 3 
-          # 3 3 3 3 3
-          # 3 3 3 3 3
-          # 3 3 3 3 3
-          # L  
-          
-          
-          #Filter 
-          # 4 4 levels
-          
-          # filter_output
-          # 5 5 5 5 5 W_conv
-          # 5 5 5 5 5 
-          # 5 5 5 5 5 
-          # 5 5 5 5 5
-          # L_conv
-        
-          #  5 5 5 W
-          #  5 5 5
-          #  5 5 5
-          #  L
-    # print dx[3,2,6,6]
-  print 'implementation'
   for n in np.arange(N):
     # layer in filter loop
     for f in np.arange(0,FW):
-      # channel loop
-      for c in np.arange(0,dw.shape[1]):
-        # filter output loop ie row_i is dout[row_i] and row is in x  
-        for row_i, row in enumerate(np.arange(0, W,stride)):
-          # filter output loop across x 
-          for column_i, column in enumerate(np.arange(0,H,stride)):
-            # within filter loop across weights and 
-            # get the x position in ie. column_pad and correspinding w position in column_pad_i
-            # dx[:,c, column:column+HH,row:row+WW]
-            # print dx[n,c, column:column+HH,row:row+WW]
-            dx[n,c, column:column+HH,row:row+WW] += dw[f,c]*dout[n,f,column_i,row_i]
-          # +=dw[f,c,:,:]*dout[:,f,column_i,row_i]
-          # for column_pad_i, column_pad in enumerate(np.arange(column,column+HH)):
-          #   for row_pad_i, row_pad in enumerate(np.arange(row,row+WW)):
-          #     dx[:,c, column_pad, row_pad]+=dw[f,c,column_pad_i,row_pad_i]*dout[:,f,column_i,row_i]
-              # dw[F,c,:,:] += np.sum(x_pad[:,c, column:(column+HH), row:(row+WW)]*dout[:,F,(column_i),(row_i)].reshape(N,1,1),axis=0)
-  dx = dx[:,:,1:6,1:6]
+      # horizontal filter loop across x
+      for row_i, row in enumerate(np.arange(0, W,stride)):
+        # vertical filter loop across x 
+        for column_i, column in enumerate(np.arange(0,H,stride)):
+          # within filter loop across weights and 
+          # get the x position in ie. column_pad and correspinding w position in column_pad_i
+          dx[n,:, column:column+HH,row:row+WW] += w[f,:]*dout[n,f,column_i,row_i]
+  dx = dx[:,:,pad:H+pad,pad:W+pad]
 
-                # reduce padding http://stackoverflow.com/questions/24806174/is-there-an-opposite-inverse-to-numpy-pad-function
-            
-            # 2 2 2 C
-               #Filter 
-               # 4 4 levels
-                 # filter_output
-                  # 5 5 5 5 5 W_conv
-                  # 5 5 5 5 5 
-                  # 5 5 5 5 5 
-                  # 5 5 5 5 5
-                  # L_conv
                   
   #############################################################################
   #                             END OF YOUR CODE                              #
