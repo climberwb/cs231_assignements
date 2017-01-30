@@ -550,8 +550,8 @@ def conv_backward_naive(dout, cache):
                     (pad,pad),(pad,pad))
   x_pad =  np.pad(x,pad_width=padding_tuple,mode='constant',constant_values=0)
   dx = np.zeros(x_pad.shape)
-  H_conv = 1 + (H + 2 * pad - HH) / stride
-  W_conv = 1 + (W + 2 * pad - WW) / stride
+  # H_conv = 1 + (H + 2 * pad - HH) / stride
+  # W_conv = 1 + (W + 2 * pad - WW) / stride
   for F in np.arange(0,FW):
     for c in np.arange(dw.shape[1]):
       for row_i, row in enumerate(np.arange(0, W,stride)):
@@ -589,21 +589,27 @@ def conv_backward_naive(dout, cache):
           #  L
     # print dx[3,2,6,6]
   print 'implementation'
-  for F in np.arange(0,FW):
-    for c in np.arange(dw.shape[1]):
-      for row_i, row in enumerate(np.arange(0, W,stride)):
-        for column_i, column in enumerate(np.arange(0,H,stride)):
-            ### TODO
-            ### ADD LOOP TO LOOPER OVER COLUMN _ COLUMN +HH AND ROW ROW +WW FOR ALL DW
-          for column_pad_i, column_pad in enumerate(np.arange(column,column+HH)):
-            for row_pad_i, row_pad in enumerate(np.arange(row,row+WW)):
-              dx[:,c, column_pad, row_pad]+=dw[F,c,column_pad_i,row_pad_i]*dout[:,F,(column_i),(row_i)]
-              # except:
-   
-              # pass
+  for n in np.arange(N):
+    # layer in filter loop
+    for f in np.arange(0,FW):
+      # channel loop
+      for c in np.arange(0,dw.shape[1]):
+        # filter output loop ie row_i is dout[row_i] and row is in x  
+        for row_i, row in enumerate(np.arange(0, W,stride)):
+          # filter output loop across x 
+          for column_i, column in enumerate(np.arange(0,H,stride)):
+            # within filter loop across weights and 
+            # get the x position in ie. column_pad and correspinding w position in column_pad_i
+            # dx[:,c, column:column+HH,row:row+WW]
+            # print dx[n,c, column:column+HH,row:row+WW]
+            dx[n,c, column:column+HH,row:row+WW] += dw[f,c]*dout[n,f,column_i,row_i]
+          # +=dw[f,c,:,:]*dout[:,f,column_i,row_i]
+          # for column_pad_i, column_pad in enumerate(np.arange(column,column+HH)):
+          #   for row_pad_i, row_pad in enumerate(np.arange(row,row+WW)):
+          #     dx[:,c, column_pad, row_pad]+=dw[f,c,column_pad_i,row_pad_i]*dout[:,f,column_i,row_i]
+              # dw[F,c,:,:] += np.sum(x_pad[:,c, column:(column+HH), row:(row+WW)]*dout[:,F,(column_i),(row_i)].reshape(N,1,1),axis=0)
   dx = dx[:,:,1:6,1:6]
-            
-           
+
                 # reduce padding http://stackoverflow.com/questions/24806174/is-there-an-opposite-inverse-to-numpy-pad-function
             
             # 2 2 2 C
@@ -641,7 +647,16 @@ def max_pool_forward_naive(x, pool_param):
   #############################################################################
   # TODO: Implement the max pooling forward pass                              #
   #############################################################################
-  pass
+  N, F, H, W = x.shape
+  pool_height, pool_width, stride = pool_param['pool_height'], pool_param['pool_width'], pool_param['stride']
+  H_pool = 1 + (H - pool_height) / stride
+  W_pool = 1 + (W  - pool_width) / stride
+  out = np.zeros((N,F,int(H_pool),int(W_pool)))
+  for n in np.arange(0,N):
+    for f in np.arange(0,F):
+      for row_i, row in enumerate(np.arange(0, W,stride)):
+        for column_i, column in enumerate(np.arange(0,H,stride)):
+          out[n,f,column_i,row_i] = x[n,f, column:(column+pool_height), row:(row+pool_width)].max()
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -664,7 +679,19 @@ def max_pool_backward_naive(dout, cache):
   #############################################################################
   # TODO: Implement the max pooling backward pass                             #
   #############################################################################
-  pass
+  x, pool_param = cache 
+  N, F, H, W = x.shape
+  dx = np.zeros(x.shape)
+  pool_height, pool_width, stride = pool_param['pool_height'], pool_param['pool_width'], pool_param['stride']
+  H_pool = 1 + (H - pool_height) / stride
+  W_pool = 1 + (W  - pool_width) / stride
+  out = np.zeros((N,F,int(H_pool),int(W_pool)))
+  for n in np.arange(0,N):
+    for f in np.arange(0,F):
+      for row_i, row in enumerate(np.arange(0, W,stride)):
+        for column_i, column in enumerate(np.arange(0,H,stride)):
+          max_position = np.argwhere(x[n,f, column:(column+pool_height), row:(row+pool_width)].max() == x[n,f, column:(column+pool_height), row:(row+pool_width)])[0] 
+          dx[n,f,max_position[0]+column,max_position[1]+row] += dout[n,f,column_i,row_i] 
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
