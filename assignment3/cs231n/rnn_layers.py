@@ -102,7 +102,21 @@ def rnn_forward(x, h0, Wx, Wh, b):
   # input data. You should use the rnn_step_forward function that you defined  #
   # above.                                                                     #
   ##############################################################################
-  pass
+  #(x, h0, Wx, Wh, b)
+  # (x, prev_h, Wx, Wh, b, next_h) in cache
+  n,t,d = x.shape
+  h = Wh.shape[0]
+  caches = []
+  h = np.zeros((n,t,h))
+  next_h,cache0 = rnn_step_forward(x[:,0,:], h0, Wx, Wh, b) #N, 0, H
+  caches.append(cache0)
+  h[:,0,:] = next_h
+  for time_step in range(1,t):
+    next_h,cache = rnn_step_forward(x[:,time_step,:], next_h, Wx, Wh, b)
+    h[:,time_step,:] = next_h
+    caches.append(cache)
+    
+    cache = caches
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
