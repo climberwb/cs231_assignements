@@ -66,10 +66,12 @@ def rnn_step_backward(dnext_h, cache):
   (x, prev_h, Wx, Wh, b, next_h) = cache
   # x.dot(Wx) + prev_h.dot(Wh)+ b
   dtanh = 1-next_h**2
-  dx = (dnext_h*dtanh).dot(Wx.T)
-  print dx.shape
-  
-  
+  dtanh = (dnext_h*dtanh)
+  dx = dtanh.dot(Wx.T)
+  dprev_h = dtanh.dot(Wh.T)
+  dWx = x.T.dot(dtanh)
+  dWh = prev_h.T.dot(dtanh)
+  db = np.sum(dtanh,axis=0)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
