@@ -158,6 +158,7 @@ def rnn_backward(dh, cache):
       (x, prev_h, Wx, Wh, b, next_h,next_h_affine) = c
       (dx_i, dprev_h_i, dWx_i, dWh_i, db_i) = rnn_step_backward(dh[:,i,:]+dh0, c)
       dx[:,i,:]+=dx_i
+      #TODO research dh[:,i,:]+dh0 and dh0=dprev_h_i
       dh0 = dprev_h_i
       dtanh = 1-next_h**2
       dtanh = (dh[:,i,:]*dtanh)
@@ -191,7 +192,8 @@ def word_embedding_forward(x, W):
   #                                                                            #
   # HINT: This should be very simple.                                          #
   ##############################################################################
-  pass
+  out = W[x]
+  cache = (x,W)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -219,7 +221,9 @@ def word_embedding_backward(dout, cache):
   #                                                                            #
   # HINT: Look up the function np.add.at                                       #
   ##############################################################################
-  pass
+  (x,W) = cache
+  # dW =  np.add.at(x,W)
+  # https://docs.scipy.org/doc/numpy/reference/generated/numpy.ufunc.at.html
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
