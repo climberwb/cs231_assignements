@@ -188,7 +188,7 @@ class CaptioningRNN(object):
     W_proj, b_proj = self.params['W_proj'], self.params['b_proj']
     W_embed = self.params['W_embed']
     Wx, Wh, b = self.params['Wx'], self.params['Wh'], self.params['b']
-    W_proj, b_proj = self.params['W_vocab'], self.params['b_vocab']
+    W_vocab, b_vocab = self.params['W_vocab'], self.params['b_vocab']
     
     ###########################################################################
     # TODO: Implement test-time sampling for the model. You will need to      #
@@ -211,7 +211,23 @@ class CaptioningRNN(object):
     # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
     # a loop.                                                                 #
     ###########################################################################
-    pass
+    #l = tanh(image*Hx + word*gx +b)
+    out_affine, cache_affine = affine_forward(features, W_proj, b_proj)
+    word_embedding, cache = word_embedding_forward(captions, W_embed)
+    if self.cell_type == "rnn":
+      n,t,d = word_embedding.shape
+      h = Wh.shape[0]
+      h = np.zeros((n,t,h))
+      next_h, cache0 = rnn_step_forward(word_embedding[:,0,:], out_affine, Wx, Wh, b ) #N, 0, H
+      h[:,1,:] = next_h
+      scores, temp_affine = temporal_affine_forward(h,W_vocab, b_vocab)
+      captions[:,0] =  np.argmax(scores[:,1],axis=1)
+      for time_step in range(0,len(captions[0,:])-2):
+        next_h,cache = rnn_step_forward(word_embedding[:,time_step+2,:], next_h, Wx, Wh, b)
+        h[:,time_step+2,:] = next_h
+        scores, temp_affine = temporal_affine_forward(h,W_vocab, b_vocab)
+        captions[:,time_step+1] =  np.argmax(scores[:,time_step+2],axis=1)
+        word_embedding, cache = word_embedding_forward(captions, W_embed)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
