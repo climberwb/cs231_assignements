@@ -142,6 +142,14 @@ class CaptioningRNN(object):
       word_ranks, caches_rnn = rnn_forward(word_vector, out_affine, Wx, Wh, b)
     scores, temp_affine = temporal_affine_forward(word_ranks,W_vocab, b_vocab)
     loss, dloss = temporal_softmax_loss(scores, captions_out, mask, verbose=False)
+    
+    #backwards pass
+    dword_ranks, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dloss, temp_affine)
+    if self.cell_type == "rnn":
+      dword_vector, dout_affine, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dword_ranks, caches_rnn)
+    grads['W_embed'] = word_embedding_backward(dword_vector, cache_embed)
+    dx, grads['W_proj'], grads['b_proj'] =  affine_backward(dout_affine, cache_affine)
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -180,7 +188,7 @@ class CaptioningRNN(object):
     W_proj, b_proj = self.params['W_proj'], self.params['b_proj']
     W_embed = self.params['W_embed']
     Wx, Wh, b = self.params['Wx'], self.params['Wh'], self.params['b']
-    W_vocab, b_vocab = self.params['W_vocab'], self.params['b_vocab']
+    W_proj, b_proj = self.params['W_vocab'], self.params['b_vocab']
     
     ###########################################################################
     # TODO: Implement test-time sampling for the model. You will need to      #
