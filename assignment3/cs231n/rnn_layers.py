@@ -269,11 +269,22 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
   # TODO: Implement the forward pass for a single timestep of an LSTM.        #
   # You may want to use the numerically stable sigmoid implementation above.  #
   #############################################################################
-  pass
+  H = prev_c.shape[1]
+  a = x.dot(Wx) + prev_h.dot(Wh) + b
+  ai,af,ao,ag = a[:,:H],a[:,H:2*H],a[:,(2*H):3*H],a[:,(3*H):]
+  
+  i = sigmoid(ai)
+  f = sigmoid(af)
+  o = sigmoid(ao)
+  g = np.tanh(ag)
+
+  next_c = f*prev_c + i*g
+  next_h = o*np.tanh(next_c)
+  
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
-  
+  cache = (prev_c,next_c,prev_h,next_h,g,o,f,i,a,ai,af,ao,ag,H)
   return next_h, next_c, cache
 
 
@@ -294,14 +305,55 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   - dWh: Gradient of hidden-to-hidden weights, of shape (H, 4H)
   - db: Gradient of biases, of shape (4H,)
   """
-  dx, dh, dc, dWx, dWh, db = None, None, None, None, None, None
+  dx, dprev_h, dprev_c, dWx, dWh, db = None, None, None, None, None, None
   #############################################################################
   # TODO: Implement the backward pass for a single timestep of an LSTM.       #
   #                                                                           #
   # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
   # the output value from the nonlinearity.                                   #
   #############################################################################
-  pass
+  (prev_c,next_c,prev_h,next_h,g,o,f,i,a,ai,af,ao,ag,H) = cache
+  
+  # second layer derivatives
+  di = sigmoid(ai)*(1-sigmoid(ai))
+  df = sigmoid(af)*(1-sigmoid(af))
+  do = sigmoid(ao)*(1-sigmoid(ao))
+  dg = 1-np.tanh(ag)**2
+  
+  # third layer derivatives
+  dnext_ci = di * g  
+  dnext_cf = df * prev_c
+  dnext_cg = i * dg
+  dnext_c_total = dnext_ci + dnext_cf + dnext_cg
+  
+  # fourth layer derivatives
+  dh_o =  do * np.tanh(next_c)
+  dh_c =  o * (1-np.tanh(next_c)**2)
+  
+  # derivatives with respect to loss function
+  dl_ho = dnext_h * dh_o
+  dlh_c = dnext_h * dh_c
+  
+  dl_c = dnext_c * dnext_c 
+  dl_ci = dnext_c * dnext_ci
+  dl_cf = dnext_c * dnext_cf
+  dl_cg = dnext_c * dnext_cg
+  
+  dl_hi = dlh_c * dnext_ci
+  dl_hf = dlh_c * dnext_cf
+  dl_hg = dlh_c * dnext_cg
+  # final derivatives with respect to loss # order - i,f,o,g
+  db = np.zeros(4*H)
+  db_ci = np.sum(dl_ci,axis=0)
+  db_cf = np.sum(dl_cf,axis=0)
+  db_cg = np.sum(dl_cg,axis=0)
+  
+  db_hi = np.sum(dl_hi,axis=0)
+  db_hf = np.sum(dl_hf,axis=0)
+  db_ho = np.sum(dl_ho,axis=0)
+  db_hg = np.sum(dl_hg,axis=0)
+  
+  db = np.concatenate((db_ci+db_hi,db_cf+db_hf,db_ho,db_cg+db_hg ), axis=0)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
