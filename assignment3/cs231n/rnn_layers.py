@@ -284,7 +284,7 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
-  cache = (prev_c,next_c,prev_h,next_h,g,o,f,i,a,ai,af,ao,ag,H)
+  cache = (prev_c,next_c,prev_h,next_h,x, Wx, Wh, b,g,o,f,i,a,ai,af,ao,ag,H)
   return next_h, next_c, cache
 
 
@@ -312,7 +312,19 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
   # the output value from the nonlinearity.                                   #
   #############################################################################
-  (prev_c,next_c,prev_h,next_h,g,o,f,i,a,ai,af,ao,ag,H) = cache
+  (prev_c,next_c,prev_h,next_h,x, Wx, Wh, b,g,o,f,i,a,ai,af,ao,ag,H) = cache
+  # first layer derivatives
+  dai_dx = Wx[:,:H] # D,4H
+  daf_dx = Wx[:,H:2*H]
+  dao_dx = Wx[:,2*H:3*H]
+  dag_dx = Wx[:,3*H:]
+  da_dWx = x # N,D
+  
+  dai_dh_prev = Wh[:,:H] #H,4H
+  daf_dh_prev = Wh[:,H:2*H]
+  dao_dh_prev = Wh[:,2*H:3*H]
+  dag_dh_prev = Wh[:,3*H:]
+  da_dWh = prev_h # N,H
   
   # second layer derivatives
   di = sigmoid(ai)*(1-sigmoid(ai))
@@ -342,7 +354,10 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   dl_hi = dlh_c * dnext_ci
   dl_hf = dlh_c * dnext_cf
   dl_hg = dlh_c * dnext_cg
-  # final derivatives with respect to loss # order - i,f,o,g
+  ############################################################
+  # final derivatives with respect to loss # order - i,f,o,g #
+  ############################################################
+  # db 
   db = np.zeros(4*H)
   db_ci = np.sum(dl_ci,axis=0)
   db_cf = np.sum(dl_cf,axis=0)
@@ -354,6 +369,19 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   db_hg = np.sum(dl_hg,axis=0)
   
   db = np.concatenate((db_ci+db_hi,db_cf+db_hf,db_ho,db_cg+db_hg ), axis=0)
+  # dx
+  dl_xi = (dl_hi).dot(dai_dx.T) + dl_ci.dot(dai_dx.T) 
+  dl_xf = (dl_hf).dot(daf_dx.T) + dl_cf.dot(daf_dx.T) 
+  dl_xo =  dl_ho.dot(dao_dx.T) 
+  dl_xg = (dl_hg).dot(dag_dx.T) + dl_cg.dot(dag_dx.T) 
+  dx = dl_xi + dl_xf + dl_xo +dl_xg
+  
+  # dprev_h
+  dl_hi = (dl_hi).dot(dai_dh_prev.T) + dl_ci.dot(dai_dh_prev.T) 
+  dl_hf = (dl_hf).dot(daf_dh_prev.T) + dl_cf.dot(daf_dh_prev.T) 
+  dl_ho =  dl_ho.dot(dao_dh_prev.T) 
+  dl_hg = (dl_hg).dot(dag_dh_prev.T) + dl_cg.dot(dag_dh_prev.T) 
+  dprev_h = dl_hi + dl_hf + dl_ho +dl_hg
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
