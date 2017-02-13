@@ -8,11 +8,9 @@ class CaptioningRNN(object):
   """
   A CaptioningRNN produces captions from image features using a recurrent
   neural network.
-
   The RNN receives input vectors of size D, has a vocab size of V, works on
   sequences of length T, has an RNN hidden dimension of H, uses word vectors
   of dimension W, and operates on minibatches of size N.
-
   Note that we don't use any regularization for the CaptioningRNN.
   """
   
@@ -20,7 +18,6 @@ class CaptioningRNN(object):
                hidden_dim=128, cell_type='rnn', dtype=np.float32):
     """
     Construct a new CaptioningRNN instance.
-
     Inputs:
     - word_to_idx: A dictionary giving the vocabulary. It contains V entries,
       and maps each string to a unique integer in the range [0, V).
@@ -161,21 +158,17 @@ class CaptioningRNN(object):
     """
     Run a test-time forward pass for the model, sampling captions for input
     feature vectors.
-
     At each timestep, we embed the current word, pass it and the previous hidden
     state to the RNN to get the next hidden state, use the hidden state to get
     scores for all vocab words, and choose the word with the highest score as
     the next word. The initial hidden state is computed by applying an affine
     transform to the input image features, and the initial word is the <START>
     token.
-
     For LSTMs you will also have to keep track of the cell state; in that case
     the initial cell state should be zero.
-
     Inputs:
     - features: Array of input image features of shape (N, D).
     - max_length: Maximum length T of generated captions.
-
     Returns:
     - captions: Array of shape (N, max_length) giving sampled captions,
       where each element is an integer in the range [0, V). The first element

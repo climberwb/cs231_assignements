@@ -11,17 +11,14 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
   """
   Run the forward pass for a single timestep of a vanilla RNN that uses a tanh
   activation function.
-
   The input data has dimension D, the hidden state has dimension H, and we use
   a minibatch size of N.
-
   Inputs:
   - x: Input data for this timestep, of shape (N, D).
   - prev_h: Hidden state from previous timestep, of shape (N, H)
   - Wx: Weight matrix for input-to-hidden connections, of shape (D, H)
   - Wh: Weight matrix for hidden-to-hidden connections, of shape (H, H)
   - b: Biases of shape (H,)
-
   Returns a tuple of:
   - next_h: Next hidden state, of shape (N, H)
   - cache: Tuple of values needed for the backward pass.
@@ -318,8 +315,8 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   daf_dx = Wx[:,H:2*H]
   dao_dx = Wx[:,2*H:3*H]
   dag_dx = Wx[:,3*H:]
-  da_dWx = x # N,D
-  
+  da_dWx = x
+  da_dWh = prev_h
   dai_dh_prev = Wh[:,:H] #H,4H
   daf_dh_prev = Wh[:,H:2*H]
   dao_dh_prev = Wh[:,2*H:3*H]
@@ -336,6 +333,7 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   dnext_ci = di * g  
   dnext_cf = df * prev_c
   dnext_cg = i * dg
+  dnext_cprev = f
   dnext_c_total = dnext_ci + dnext_cf + dnext_cg
   
   # fourth layer derivatives
@@ -346,14 +344,16 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   dl_ho = dnext_h * dh_o
   dlh_c = dnext_h * dh_c
   
-  dl_c = dnext_c * dnext_c 
+  
   dl_ci = dnext_c * dnext_ci
   dl_cf = dnext_c * dnext_cf
   dl_cg = dnext_c * dnext_cg
+  dl_ccprev = dnext_c * dnext_cprev
   
   dl_hi = dlh_c * dnext_ci
   dl_hf = dlh_c * dnext_cf
   dl_hg = dlh_c * dnext_cg
+  dl_hcprev = dlh_c * dnext_cprev
   ############################################################
   # final derivatives with respect to loss # order - i,f,o,g #
   ############################################################
@@ -377,11 +377,28 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   dx = dl_xi + dl_xf + dl_xo +dl_xg
   
   # dprev_h
-  dl_hi = (dl_hi).dot(dai_dh_prev.T) + dl_ci.dot(dai_dh_prev.T) 
-  dl_hf = (dl_hf).dot(daf_dh_prev.T) + dl_cf.dot(daf_dh_prev.T) 
-  dl_ho =  dl_ho.dot(dao_dh_prev.T) 
-  dl_hg = (dl_hg).dot(dag_dh_prev.T) + dl_cg.dot(dag_dh_prev.T) 
-  dprev_h = dl_hi + dl_hf + dl_ho +dl_hg
+  dl_dprev_hi = (dl_hi).dot(dai_dh_prev.T) + dl_ci.dot(dai_dh_prev.T) 
+  dl_dprev_hf = (dl_hf).dot(daf_dh_prev.T) + dl_cf.dot(daf_dh_prev.T) 
+  dl_dprev_ho =  dl_ho.dot(dao_dh_prev.T) 
+  dl_dprev_hg = (dl_hg).dot(dag_dh_prev.T) + dl_cg.dot(dag_dh_prev.T) 
+  dprev_h = dl_dprev_hi + dl_dprev_hf + dl_dprev_ho +dl_dprev_hg
+  
+  #dWx
+  dl_Wxi = (da_dWx.T).dot(dl_hi) + (da_dWx.T).dot(dl_ci)
+  dl_Wxf = (da_dWx.T).dot(dl_hf) + (da_dWx.T).dot(dl_cf)
+  dl_Wxo = (da_dWx.T).dot(dl_ho)    # N,D         N,H
+  dl_Wxg = (da_dWx.T).dot(dl_hg) + (da_dWx.T).dot(dl_cg)
+  dWx = np.hstack((dl_Wxi,dl_Wxf,dl_Wxo,dl_Wxg))
+  
+  #dWh
+  dl_Whi = (da_dWh.T).dot(dl_hi) + (da_dWh.T).dot(dl_ci)
+  dl_Whf = (da_dWh.T).dot(dl_hf) + (da_dWh.T).dot(dl_cf)
+  dl_Who = (da_dWh.T).dot(dl_ho)    # N,D         N,H
+  dl_Whg = (da_dWh.T).dot(dl_hg) + (da_dWh.T).dot(dl_cg)
+  dWh = np.hstack((dl_Whi,dl_Whf,dl_Who,dl_Whg))
+  
+  #dprev_c
+  dprev_c = dl_ccprev + dl_hcprev
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -458,7 +475,6 @@ def temporal_affine_forward(x, w, b):
   vectors arranged into a minibatch of N timeseries, each of length T. We use
   an affine function to transform each of those vectors into a new vector of
   dimension M.
-
   Inputs:
   - x: Input data of shape (N, T, D)
   - w: Weights of shape (D, M)
@@ -478,11 +494,9 @@ def temporal_affine_forward(x, w, b):
 def temporal_affine_backward(dout, cache):
   """
   Backward pass for temporal affine layer.
-
   Input:
   - dout: Upstream gradients of shape (N, T, M)
   - cache: Values from forward pass
-
   Returns a tuple of:
   - dx: Gradient of input, of shape (N, T, D)
   - dw: Gradient of weights, of shape (D, M)
@@ -508,19 +522,16 @@ def temporal_softmax_loss(x, y, mask, verbose=False):
   ground-truth element at each timestep. We use a cross-entropy loss at each
   timestep, summing the loss over all timesteps and averaging across the
   minibatch.
-
   As an additional complication, we may want to ignore the model output at some
   timesteps, since sequences of different length may have been combined into a
   minibatch and padded with NULL tokens. The optional mask argument tells us
   which elements should contribute to the loss.
-
   Inputs:
   - x: Input scores, of shape (N, T, V)
   - y: Ground-truth indices, of shape (N, T) where each element is in the range
        0 <= y[i, t] < V
   - mask: Boolean array of shape (N, T) where mask[i, t] tells whether or not
     the scores at x[i, t] should contribute to the loss.
-
   Returns a tuple of:
   - loss: Scalar giving loss
   - dx: Gradient of loss with respect to scores x.
@@ -545,4 +556,3 @@ def temporal_softmax_loss(x, y, mask, verbose=False):
   dx = dx_flat.reshape(N, T, V)
   
   return loss, dx
-
